@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Niveau 3 - Relier les Lettres</title>
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --green-dark:  #1b5e20;
+            --green-mid:   #2e7d32;
+            --green-light: #66bb6a;
+            --green-pale:  #c8e6c9;
+            --green-xpale: #e8f5e9;
+            --danger:      #ef5350;
+            --accent:      #f9a825;
+            --card-bg:     rgba(255,255,255,0.97);
+        }
+
+        body {
+            font-family: 'Nunito', sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(145deg, #388e3c 0%, #43a047 35%, #66bb6a 70%, #a5d6a7 100%);
+            display: flex; flex-direction: column; align-items: center;
+            padding: 16px 16px 40px;
+            position: relative; overflow-x: hidden;
+        }
+
+        .bg-bubbles { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 0; }
+        .bg-bubble {
+            position: absolute; font-size: 2.2rem; opacity: 0.07;
+            animation: floatUp var(--dur, 14s) linear infinite;
+            animation-delay: var(--delay, 0s);
+        }
+        @keyframes floatUp {
+            0%   { transform: translateY(110vh) rotate(0deg); opacity: 0; }
+            10%  { opacity: 0.07; } 90% { opacity: 0.07; }
+            100% { transform: translateY(-10vh) rotate(360deg); opacity: 0; }
+        }
+
+        .header {
+            position: relative; z-index: 2;
+            width: 100%; max-width: 1000px;
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 12px; gap: 10px;
+        }
+        .back-btn {
+            padding: 10px 18px; background: rgba(255,255,255,0.18); color: white;
+            border-radius: 14px; text-decoration: none; font-weight: 700; font-size: 14px;
+            border: 2px solid rgba(255,255,255,0.35); transition: .25s; backdrop-filter: blur(6px);
+        }
+        .back-btn:hover { background: rgba(255,255,255,0.3); transform: translateX(-2px); }
+        .level-badge {
+            background: rgba(255,255,255,0.95); color: var(--green-mid);
+            font-family: 'Baloo 2', cursive; font-weight: 800; font-size: 15px;
+            padding: 8px 20px; border-radius: 20px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+            display: flex; align-items: center; gap: 6px;
+        }
+        .diff-badge {
+            background: linear-gradient(135deg, #66bb6a, #1b5e20);
+            color: white; font-size: 11px; font-weight: 700;
+            padding: 3px 10px; border-radius: 20px; letter-spacing: .5px;
+        }
+        .header-right { display: flex; gap: 10px; align-items: center; }
+        .score-badge {
+            background: rgba(255,255,255,0.18); color: white;
+            font-family: 'Baloo 2', cursive; font-weight: 700; font-size: 16px;
+            padding: 10px 20px; border-radius: 20px;
+            border: 2px solid rgba(255,255,255,0.35); backdrop-filter: blur(6px);
+        }
+
+        .timer-box {
+            position: relative; z-index: 2;
+            width: 100%; max-width: 1000px;
+            margin-bottom: 12px;
+        }
+        .timer-label {
+            color: white; font-weight: 700; font-size: 14px;
+            margin-bottom: 6px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .timer-label .timer-time {
+            font-family: 'Baloo 2', cursive; font-size: 18px; font-weight: 800;
+            transition: color .3s;
+        }
+        .timer-label .timer-time.urgent { color: #ff6b6b; animation: urgentPulse .5s ease-in-out infinite alternate; }
+        @keyframes urgentPulse { from { transform: scale(1); } to { transform: scale(1.1); } }
+        .timer-bar-bg {
+            width: 100%; height: 12px;
+            background: rgba(255,255,255,0.25);
+            border-radius: 50px; overflow: hidden;
+        }
+        .timer-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #a5d6a7, #ffffff);
+            border-radius: 50px;
+            transition: width 1s linear, background 0.5s;
+        }
+        .timer-bar.warning { background: linear-gradient(90deg, #ff9800, #ffcc80); }
+        .timer-bar.danger  { background: linear-gradient(90deg, #ef5350, #ff8a80); }
+
+        .main-card {
+            position: relative; z-index: 1;
+            background: var(--card-bg); border-radius: 28px; padding: 22px;
+            width: 100%; max-width: 1000px;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.25), 0 0 0 1px rgba(255,255,255,0.3);
+            display: flex; gap: 24px; align-items: flex-start;
+        }
+
+        .game-area {
+            flex: 1; display: flex; flex-direction: column;
+            align-items: center; gap: 12px; min-width: 0;
+        }
+        .game-title {
+            font-family: 'Baloo 2', cursive; font-size: 12px; color: #90a4ae;
+            font-weight: 700; text-transform: uppercase; letter-spacing: 2px;
+            text-align: center;
+        }
+
+        .progress-wrap { width: 100%; }
+        .progress-info {
+            display: flex; justify-content: space-between;
+            font-size: 11px; color: #90a4ae; font-weight: 700; margin-bottom: 5px;
+            text-transform: uppercase; letter-spacing: .5px;
+        }
+        .progress-bar-bg { width: 100%; height: 8px; background: #e8f5e9; border-radius: 10px; overflow: hidden; }
+        .progress-bar-fill {
+            height: 100%; background: linear-gradient(90deg, var(--green-light), var(--green-pale));
+            border-radius: 10px; width: 0%;
+            transition: width .6s cubic-bezier(.34,1.56,.64,1);
+        }
+
+        .current-row { width: 100%; display: flex; align-items: center; gap: 10px; }
+        .current-word {
+            flex: 1; min-height: 54px;
+            display: flex; align-items: center; justify-content: center;
+            font-family: 'Baloo 2', cursive; font-size: 26px; font-weight: 800;
+            color: var(--green-mid); letter-spacing: 10px;
+            background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
+            border-radius: 50px; border: 2px solid #a5d6a7;
+            box-shadow: inset 0 2px 6px rgba(0,0,0,.04), 0 4px 12px rgba(46,125,50,.12);
+            transition: all .2s; user-select: none;
+        }
+        .current-word.has-letters { border-color: var(--green-light); box-shadow: inset 0 2px 6px rgba(0,0,0,.04), 0 4px 16px rgba(102,187,106,.3); }
+        .current-word.wrong-shake { animation: shake .4s ease; border-color: var(--danger); background: linear-gradient(135deg,#fff5f5,#ffebee); }
+        @keyframes shake {
+            0%,100% { transform: translateX(0); }
+            20% { transform: translateX(-8px); } 40% { transform: translateX(8px); }
+            60% { transform: translateX(-6px); } 80% { transform: translateX(6px); }
+        }
+
+        .attempts-row { display: flex; gap: 6px; align-items: center; }
+        .attempts-label { font-size: 11px; color: #aaa; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-right: 4px; }
+        .attempt-dot {
+            width: 14px; height: 14px; border-radius: 50%;
+            background: #e0e0e0; border: 2px solid #ccc; transition: all .3s;
+        }
+        .attempt-dot.wrong { background: var(--danger); border-color: #c62828; transform: scale(1.15); }
+
+        .words { display: flex; flex-wrap: wrap; gap: 7px; justify-content: center; width: 100%; }
+        .word-slot {
+            padding: 8px 18px; min-width: 85px;
+            background: #fafafa; border: 2px dashed #ddd;
+            border-radius: 50px; display: flex; align-items: center; justify-content: center;
+            font-family: 'Baloo 2', cursive; font-size: 13px; font-weight: 700;
+            color: #bbb; transition: .35s; position: relative;
+        }
+        .word-slot::before { content: attr(data-emoji); margin-right: 5px; font-size: 14px; opacity: 0; transition: .3s; }
+        .word-slot.correct {
+            background: linear-gradient(135deg, var(--green-mid), var(--green-light));
+            border-color: var(--green-mid); border-style: solid;
+            color: white; box-shadow: 0 4px 16px rgba(46,125,50,.4);
+        }
+        .word-slot.correct::before { opacity: 1; }
+
+        .circle-section {
+            width: 100%; display: flex; flex-direction: column;
+            align-items: center; gap: 6px;
+        }
+        .circle-label {
+            font-size: 10px; color: #aaa; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 1px; text-align: center;
+        }
+        .save-btn {
+            padding: 10px 28px;
+            background: linear-gradient(135deg, #66bb6a, #2e7d32);
+            color: white; border: none; border-radius: 50px;
+            cursor: pointer; font-size: 14px; font-weight: bold;
+            font-family: 'Nunito', sans-serif;
+            box-shadow: 0 4px 12px rgba(46,125,50,0.35); transition: 0.3s;
+        }
+        .save-btn:hover { transform: translateY(-2px); box-shadow: 0 7px 18px rgba(46,125,50,0.5); }
+        .circle-reuse-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, var(--green-xpale), var(--green-pale));
+            color: var(--green-mid); font-size: 10px; font-weight: 700;
+            padding: 3px 10px; border-radius: 20px; border: 1px solid #a5d6a7;
+            margin-top: 2px;
+        }
+        .circle-track { position: relative; }
+        #drawCanvas { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
+        .circle-center {
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%,-50%);
+            width: 62px; height: 62px; border-radius: 50%;
+            background: linear-gradient(135deg, var(--green-xpale), var(--green-pale));
+            border: 3px solid #a5d6a7;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 26px; z-index: 1;
+            box-shadow: 0 4px 16px rgba(46,125,50,.18), inset 0 1px 4px rgba(255,255,255,.8);
+        }
+
+        .circle-letter {
+            position: absolute; border-radius: 50%;
+            background: white; border: 3px solid #a5d6a7;
+            display: flex; align-items: center; justify-content: center;
+            font-family: 'Baloo 2', cursive; font-weight: 800;
+            color: var(--green-mid); cursor: pointer; user-select: none;
+            transition: transform .15s, background .15s, border-color .15s, box-shadow .15s, opacity .25s;
+            box-shadow: 0 4px 12px rgba(46,125,50,.15), 0 1px 0 rgba(255,255,255,.9) inset;
+            z-index: 2; transform: translate(-50%,-50%);
+        }
+        .circle-letter:hover:not(.cl-selected):not(.cl-flash) {
+            background: var(--green-light); color: white; border-color: var(--green-dark);
+            transform: translate(-50%,-50%) scale(1.18);
+            box-shadow: 0 8px 24px rgba(46,125,50,.5);
+        }
+        .circle-letter.cl-selected {
+            background: linear-gradient(135deg, var(--green-mid), var(--green-light));
+            color: white; border-color: var(--green-dark);
+            transform: translate(-50%,-50%) scale(1.15);
+            box-shadow: 0 6px 22px rgba(46,125,50,.55);
+        }
+        .circle-letter.cl-flash {
+            background: linear-gradient(135deg, var(--green-pale), var(--green-light));
+            color: white; border-color: var(--green-mid);
+            transform: translate(-50%,-50%) scale(1.1);
+            box-shadow: 0 6px 20px rgba(46,125,50,.4);
+        }
+        .circle-letter .order-badge {
+            position: absolute; top: -6px; right: -6px;
+            width: 18px; height: 18px; border-radius: 50%;
+            background: #f9a825; color: white;
+            font-size: 10px; font-weight: 800;
+            display: flex; align-items: center; justify-content: center;
+            border: 2px solid white; box-shadow: 0 2px 6px rgba(0,0,0,.25);
+            font-family: 'Nunito', sans-serif;
+        }
+
+        .image-section {
+            flex-shrink: 0; display: flex; flex-direction: column;
+            align-items: center; gap: 12px;
+        }
+        .image-wrapper {
+            position: relative; border-radius: 20px; overflow: hidden;
+            box-shadow: 0 10px 30px rgba(27,94,32,.25);
+        }
+        .image-wrapper img { width: 230px; height: 230px; object-fit: cover; display: block; }
+        .image-overlay {
+            position: absolute; inset: 0;
+            background: linear-gradient(to top, rgba(27,94,32,.55) 0%, transparent 50%);
+        }
+        .image-label {
+            position: absolute; bottom: 10px; left: 0; right: 0;
+            text-align: center; color: white;
+            font-family: 'Baloo 2', cursive; font-size: 12px; font-weight: 700;
+            letter-spacing: 1.5px; text-transform: uppercase;
+            text-shadow: 0 2px 8px rgba(0,0,0,.6);
+        }
+        .hint-pills { display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; width: 230px; }
+        .hint-pill {
+            background: linear-gradient(135deg, var(--green-xpale), var(--green-pale));
+            color: var(--green-mid); font-size: 11px; font-weight: 700;
+            padding: 4px 10px; border-radius: 20px; border: 1px solid #a5d6a7;
+        }
+
+        .notif {
+            position: fixed; bottom: 30px; left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            padding: 14px 32px; border-radius: 50px;
+            font-family: 'Baloo 2', cursive; font-size: 16px; font-weight: 700;
+            color: white; box-shadow: 0 10px 30px rgba(0,0,0,.25);
+            transition: all .4s cubic-bezier(.34,1.56,.64,1);
+            opacity: 0; z-index: 999; white-space: nowrap;
+        }
+        .notif.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+        .notif.success { background: linear-gradient(135deg, var(--green-light), var(--green-mid)); }
+        .notif.wrong   { background: linear-gradient(135deg,#ef5350,#e53935); }
+        .notif.win     { background: linear-gradient(135deg, var(--green-mid), var(--green-light)); }
+        .notif.finish  { background: linear-gradient(135deg,#f9a825,#fbc02d); }
+
+        .overlay {
+            display: none; position: fixed; inset: 0; z-index: 500;
+            background: rgba(27,94,32,.5); backdrop-filter: blur(6px);
+            align-items: center; justify-content: center;
+        }
+        .overlay.show { display: flex; }
+        .overlay-card {
+            background: white; border-radius: 28px; padding: 40px 50px;
+            text-align: center; box-shadow: 0 30px 80px rgba(0,0,0,.4);
+            max-width: 420px; animation: popIn .5s cubic-bezier(.34,1.56,.64,1);
+        }
+        @keyframes popIn { from { opacity:0; transform:scale(.6); } to { opacity:1; transform:scale(1); } }
+        .overlay-icon { font-size: 64px; margin-bottom: 12px; }
+        .overlay-title { font-family:'Baloo 2',cursive; font-size:28px; font-weight:800; color: var(--green-mid); margin-bottom:8px; }
+        .overlay-title.lose { color:#c62828; }
+        .overlay-sub { font-size:15px; color:#666; margin-bottom:24px; }
+        .overlay-btn {
+            display:inline-block; padding:13px 32px;
+            background:linear-gradient(135deg, var(--green-light), var(--green-mid));
+            color:white; font-family:'Baloo 2',cursive;
+            font-size:16px; font-weight:700; border-radius:50px;
+            border:none; cursor:pointer; text-decoration:none;
+            box-shadow:0 6px 18px rgba(46,125,50,.4); transition:.25s; margin:4px;
+        }
+        .overlay-btn:hover { transform:translateY(-2px); }
+        .overlay-btn.danger { background:linear-gradient(135deg,#ef5350,#e53935); box-shadow:0 6px 18px rgba(239,83,80,.4); }
+
+        .confetti-piece {
+            position:fixed; border-radius:2px;
+            animation:confettiFall 1.5s ease-in forwards;
+            z-index:1000; pointer-events:none;
+        }
+        @keyframes confettiFall {
+            0%   { transform:translateY(-10px) rotate(0deg); opacity:1; }
+            100% { transform:translateY(100vh) rotate(720deg); opacity:0; }
+        }
+        .hidden { display:none; }
+    </style>
+</head>
+<body>
+
+<div class="bg-bubbles">
+    <div class="bg-bubble" style="left:5%;--dur:13s;--delay:0s">🌿</div>
+    <div class="bg-bubble" style="left:15%;--dur:17s;--delay:-4s">🍃</div>
+    <div class="bg-bubble" style="left:28%;--dur:11s;--delay:-2s">🟢</div>
+    <div class="bg-bubble" style="left:42%;--dur:15s;--delay:-7s">🌱</div>
+    <div class="bg-bubble" style="left:57%;--dur:12s;--delay:-1s">🍀</div>
+    <div class="bg-bubble" style="left:70%;--dur:16s;--delay:-5s">🌿</div>
+    <div class="bg-bubble" style="left:83%;--dur:14s;--delay:-3s">🍃</div>
+    <div class="bg-bubble" style="left:93%;--dur:10s;--delay:-6s">🟢</div>
+</div>
+
+<div class="header">
+    <a th:href="@{/levels}" class="back-btn">⬅ Niveaux</a>
+    <div class="level-badge">
+        🎯 Niveau <span th:text="${level}"></span>
+        <span class="diff-badge">DIFFICILE</span>
+    </div>
+    <div class="header-right">
+        <div class="score-badge">⭐ <span id="scoreDisplay">0</span> pts</div>
+    </div>
+</div>
+
+<div class="timer-box">
+    <div class="timer-label">
+        <span>⏱ Temps restant</span>
+        <span class="timer-time" id="timerDisplay">1:00</span>
+    </div>
+    <div class="timer-bar-bg">
+        <div class="timer-bar" id="timerBar" style="width:100%"></div>
+    </div>
+</div>
+
+<span class="hidden" id="nextLevel"       th:text="${level + 1}"></span>
+<span class="hidden" id="currentLevel"    th:text="${level}"></span>
+<span class="hidden" id="isLastLevel"     th:text="${isLastLevel}"></span>
+<span class="hidden" id="savedScore"      th:text="${savedScore}"></span>
+<span class="hidden" id="savedFoundWords" th:text="${savedFoundWords}"></span>
+<span class="hidden" id="savedTimeLeft"   th:text="${savedTimeLeft}"></span>
+
+<div class="main-card">
+    <div class="game-area">
+        <div class="game-title">🔗 Maintenez + Glissez pour relier les lettres</div>
+
+        <div class="progress-wrap">
+            <div class="progress-info">
+                <span>Progression</span>
+                <span id="progressText">0 / <span id="totalCount">0</span></span>
+            </div>
+            <div class="progress-bar-bg">
+                <div class="progress-bar-fill" id="progressBar"></div>
+            </div>
+        </div>
+
+        <div class="current-row">
+            <div class="current-word" id="currentWordDisplay">_ _ _</div>
+        </div>
+
+        <div class="attempts-row">
+            <span class="attempts-label">Erreurs :</span>
+            <div class="attempt-dot" id="dot0"></div>
+            <div class="attempt-dot" id="dot1"></div>
+            <div class="attempt-dot" id="dot2"></div>
+            <div class="attempt-dot" id="dot3"></div>
+            <div class="attempt-dot" id="dot4"></div>
+        </div>
+
+        <div class="words" id="wordSlotsContainer">
+            <div class="word-slot"
+                 th:each="w : ${words}"
+                 th:attr="data-word=${w}, data-emoji=${
+                     w == 'POMME'   ? '🍎' : w == 'RAISIN'  ? '🍇' :
+                     w == 'CITRON' ? '🍋' : w == 'FRAISE'  ? '🍓' :
+                     w == 'CAROTTE'? '🥕' : w == 'BROCOLI' ? '🥦' :
+                     w == 'MANGUE' ? '🥭' : w == 'ANANAS'  ? '🍍' :
+                     w == 'CERISE' ? '🍒' : w == 'TOMATE'  ? '🍅' :
+                     w == 'BANANE' ? '🍌' : w == 'AVOCAT'  ? '🥑' : '🌿'
+                 }">
+                <span th:text="${#strings.repeat('_ ', #strings.length(w)).trim()}"></span>
+            </div>
+        </div>
+
+        <div class="circle-section">
+            <div class="circle-label">Maintenez + Glissez pour relier les lettres</div>
+            <div class="circle-reuse-badge">♻️ Lettres réutilisables après chaque mot trouvé</div>
+            <button class="save-btn" onclick="saveGame()">💾 Sauvegarder</button>
+            <div class="circle-track" id="circleTrack">
+                <svg id="drawCanvas">
+                    <defs>
+                        <filter id="glow">
+                            <feGaussianBlur stdDeviation="2.5" result="coloredBlur"/>
+                            <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                        </filter>
+                    </defs>
+                    <circle id="trackCircle" cx="0" cy="0" r="0"
+                            fill="none" stroke="#e8f5e9" stroke-width="44" opacity="0.5"/>
+                    <circle id="trackCircleBorder" cx="0" cy="0" r="0"
+                            fill="none" stroke="#a5d6a7" stroke-width="2" stroke-dasharray="5 4"/>
+                    <g id="foundLines"></g>
+                    <g id="currentLines"></g>
+                    <line id="dragLine" x1="0" y1="0" x2="0" y2="0"
+                          stroke="#66bb6a" stroke-width="3" stroke-linecap="round"
+                          stroke-dasharray="7 4" opacity="0"/>
+                </svg>
+                <div class="circle-center" id="circleCenter">🌿</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="image-section">
+        <div class="image-wrapper">
+            <img th:src="@{'/images/' + ${image}}" alt="indice">
+            <div class="image-overlay"></div>
+            <div class="image-label">🔍 Indice visuel</div>
+        </div>
+        <div class="hint-pills">
+            <span class="hint-pill">🔗 Glisser pour relier</span>
+            <span class="hint-pill">❌ -10 pts / 5 erreurs</span>
+            <span class="hint-pill" id="wordsCountPill">? mots</span>
+        </div>
+    </div>
+</div>
+
+<div class="notif" id="notif"></div>
+
+<div class="overlay" id="gameOverlay">
+    <div class="overlay-card">
+        <div class="overlay-icon">⏰</div>
+        <div class="overlay-title lose">Temps écoulé !</div>
+        <div class="overlay-sub">Dommage, tu n'as pas trouvé tous les mots à temps.</div>
+        <a th:href="@{/levels}" class="overlay-btn danger">↩ Niveaux</a>
+        <button class="overlay-btn" onclick="location.reload()">🔄 Réessayer</button>
+    </div>
+</div>
+
+<div class="overlay" id="winOverlay">
+    <div class="overlay-card">
+        <div class="overlay-icon">🏆</div>
+        <div class="overlay-title" id="winTitle">Bravo !</div>
+        <div class="overlay-sub" id="winSub">Tu as trouvé tous les mots !</div>
+        <button class="overlay-btn" id="nextBtn">➡ Niveau suivant</button>
+    </div>
+</div>
+
+<script>
+let score         = 0;
+let foundWords    = 0;
+let wrongAttempts = 0;
+let dotCount      = 0;
+let totalWords    = 0;
+let currentLevel  = parseInt(document.getElementById("currentLevel").innerText);
+let isLastLevel   = document.getElementById("isLastLevel").innerText === "true";
+let timerSeconds  = 60; // ← toujours 1 minute, ignoré la sauvegarde
+let timerInterval = null;
+let gameEnded     = false;
+
+let letterElements  = [];
+let selectedIndices = [];
+let isDragging      = false;
+let circleSize      = 320;
+let circleRadius    = 120;
+
+window.addEventListener("DOMContentLoaded", () => {
+    const savedScore = parseInt(document.getElementById("savedScore").innerText) || 0;
+    if (savedScore > 0) { score = savedScore; document.getElementById("scoreDisplay").innerText = score; }
+
+    // Timer toujours à 60s à chaque accès
+    timerSeconds = 60;
+
+    const slots = document.querySelectorAll(".word-slot");
+    totalWords = slots.length;
+    document.getElementById("totalCount").innerText = totalWords;
+    document.getElementById("wordsCountPill").innerText = totalWords + " mots à trouver";
+
+    const savedFW = document.getElementById("savedFoundWords").innerText;
+    if (savedFW) {
+        savedFW.split(",").filter(w => w).forEach(word => {
+            slots.forEach(slot => {
+                if (slot.dataset.word === word) { revealSlot(slot, word); foundWords++; }
+            });
+        });
+        updateProgress();
+    }
+
+    buildCircle();
+    startTimer();
+    document.addEventListener("mouseup",   onMouseUp);
+    document.addEventListener("mousemove", onMouseMove);
+});
+
+function startTimer() {
+    renderTimer();
+    timerInterval = setInterval(() => {
+        if (gameEnded) { clearInterval(timerInterval); return; }
+        timerSeconds--;
+        renderTimer();
+        if (timerSeconds <= 0) { clearInterval(timerInterval); triggerLose(); }
+    }, 1000);
+}
+
+function renderTimer() {
+    const m = Math.floor(timerSeconds / 60), s = timerSeconds % 60;
+    const el = document.getElementById("timerDisplay");
+    el.innerText = m + ":" + String(s).padStart(2,"0");
+    timerSeconds <= 15 ? el.classList.add("urgent") : el.classList.remove("urgent");
+    const pct = (timerSeconds / 60) * 100;
+    const bar = document.getElementById("timerBar");
+    bar.style.width = pct + "%";
+    if (pct > 50)      bar.className = "timer-bar";
+    else if (pct > 25) bar.className = "timer-bar warning";
+    else               bar.className = "timer-bar danger";
+}
+
+function buildCircle() {
+    const slots = document.querySelectorAll(".word-slot");
+    let maxCount = {};
+    slots.forEach(s => {
+        let wc = {};
+        s.dataset.word.split("").forEach(c => { wc[c] = (wc[c]||0) + 1; });
+        for (let c in wc) maxCount[c] = Math.max(maxCount[c]||0, wc[c]);
+    });
+
+    let allLetters = [];
+    for (let c in maxCount) for (let i = 0; i < maxCount[c]; i++) allLetters.push(c);
+    allLetters = shuffle(allLetters);
+    const n = allLetters.length;
+
+    const letterSize = n <= 8 ? 58 : n <= 11 ? 52 : n <= 14 ? 46 : 42;
+    const minGap     = 10;
+    circleRadius = Math.max(100, Math.ceil(n * (letterSize + minGap) / (2 * Math.PI)));
+    circleSize   = (circleRadius + letterSize * 0.6) * 2 + 16;
+    const cx = circleSize / 2, cy = circleSize / 2;
+
+    const track  = document.getElementById("circleTrack");
+    const canvas = document.getElementById("drawCanvas");
+    track.style.width    = circleSize + "px";
+    track.style.height   = circleSize + "px";
+    track.style.position = "relative";
+    canvas.setAttribute("width",  circleSize);
+    canvas.setAttribute("height", circleSize);
+    canvas.style.width  = circleSize + "px";
+    canvas.style.height = circleSize + "px";
+
+    const trackMid = circleRadius;
+    const trackW   = letterSize * 1.1;
+    document.getElementById("trackCircle").setAttribute("cx", cx);
+    document.getElementById("trackCircle").setAttribute("cy", cy);
+    document.getElementById("trackCircle").setAttribute("r",  trackMid);
+    document.getElementById("trackCircle").setAttribute("stroke-width", trackW);
+    document.getElementById("trackCircleBorder").setAttribute("cx", cx);
+    document.getElementById("trackCircleBorder").setAttribute("cy", cy);
+    document.getElementById("trackCircleBorder").setAttribute("r",  trackMid + trackW/2);
+
+    letterElements = [];
+    allLetters.forEach((letter, i) => {
+        const angle = (2 * Math.PI * i / n) - Math.PI / 2;
+        const lx = cx + circleRadius * Math.cos(angle);
+        const ly = cy + circleRadius * Math.sin(angle);
+
+        const el = document.createElement("div");
+        el.className    = "circle-letter";
+        el.innerText    = letter;
+        el.style.width  = letterSize + "px";
+        el.style.height = letterSize + "px";
+        el.style.fontSize = Math.round(letterSize * 0.38) + "px";
+        el.style.left   = lx + "px";
+        el.style.top    = ly + "px";
+        el.dataset.index = i;
+
+        el.addEventListener("mousedown",  e => onLetterDown(e, i));
+        el.addEventListener("mouseenter", e => onLetterEnter(e, i));
+
+        track.appendChild(el);
+        letterElements.push({ el, letter, cx: lx, cy: ly, size: letterSize, index: i });
+    });
+}
+
+function shuffle(arr) {
+    for (let i = arr.length-1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i+1));
+        [arr[i],arr[j]] = [arr[j],arr[i]];
+    }
+    return arr;
+}
+
+function onLetterDown(e, index) {
+    if (gameEnded) return;
+    if (e.preventDefault) e.preventDefault();
+    isDragging      = true;
+    selectedIndices = [index];
+    letterElements[index].el.classList.add("cl-selected");
+    addBadge(index, 1);
+    updateCurrentWord();
+    clearCurrentLines();
+}
+
+function onLetterEnter(e, index) {
+    if (!isDragging || gameEnded) return;
+    if (selectedIndices.includes(index)) return;
+    const prev = selectedIndices[selectedIndices.length-1];
+    selectedIndices.push(index);
+    letterElements[index].el.classList.add("cl-selected");
+    addBadge(index, selectedIndices.length);
+    drawSegment(prev, index, "currentLines", false);
+    updateCurrentWord();
+}
+
+function onMouseMove(e) {
+    if (!isDragging || gameEnded || selectedIndices.length === 0) return;
+    const last  = selectedIndices[selectedIndices.length-1];
+    const track = document.getElementById("circleTrack");
+    const rect  = track.getBoundingClientRect();
+    moveDragLine(letterElements[last].cx, letterElements[last].cy,
+                 e.clientX - rect.left, e.clientY - rect.top);
+}
+
+function onMouseUp() {
+    if (!isDragging || gameEnded) return;
+    isDragging = false;
+    hideDragLine();
+    selectedIndices.length >= 2 ? validateWord() : clearSelection();
+}
+
+function moveDragLine(x1,y1,x2,y2) {
+    const dl = document.getElementById("dragLine");
+    dl.setAttribute("x1",x1); dl.setAttribute("y1",y1);
+    dl.setAttribute("x2",x2); dl.setAttribute("y2",y2);
+    dl.setAttribute("opacity","0.65");
+}
+function hideDragLine() { document.getElementById("dragLine").setAttribute("opacity","0"); }
+
+function drawSegment(idxA, idxB, groupId, permanent) {
+    const a = letterElements[idxA], b = letterElements[idxB];
+    const line = document.createElementNS("http://www.w3.org/2000/svg","line");
+    line.setAttribute("x1",a.cx); line.setAttribute("y1",a.cy);
+    line.setAttribute("x2",b.cx); line.setAttribute("y2",b.cy);
+    line.setAttribute("stroke",        permanent ? "#2e7d32" : "#66bb6a");
+    line.setAttribute("stroke-width",  permanent ? "5"       : "3");
+    line.setAttribute("stroke-linecap","round");
+    line.setAttribute("opacity",       permanent ? "0.55"    : "0.7");
+    if (permanent) line.setAttribute("filter","url(#glow)");
+    document.getElementById(groupId).appendChild(line);
+}
+function clearCurrentLines() { document.getElementById("currentLines").innerHTML = ""; }
+
+function addBadge(index, order) {
+    const el = letterElements[index].el;
+    let b = el.querySelector(".order-badge");
+    if (!b) { b = document.createElement("div"); b.className = "order-badge"; el.appendChild(b); }
+    b.innerText = order;
+}
+function clearBadges() { document.querySelectorAll(".order-badge").forEach(b => b.remove()); }
+
+function updateCurrentWord() {
+    const word = selectedIndices.map(i => letterElements[i].letter).join("");
+    const d = document.getElementById("currentWordDisplay");
+    if (word.length > 0) { d.innerText = word; d.classList.add("has-letters"); }
+    else { d.innerText = "_ _ _"; d.classList.remove("has-letters"); }
+}
+
+function validateWord() {
+    const word = selectedIndices.map(i => letterElements[i].letter).join("");
+    let matched = false;
+
+    document.querySelectorAll(".word-slot").forEach(slot => {
+        if (slot.classList.contains("correct") || word !== slot.dataset.word) return;
+        matched = true;
+        revealSlot(slot, word);
+
+        for (let i = 0; i < selectedIndices.length-1; i++)
+            drawSegment(selectedIndices[i], selectedIndices[i+1], "foundLines", true);
+
+        const used = [...selectedIndices];
+        used.forEach(idx => {
+            const el = letterElements[idx].el;
+            el.classList.remove("cl-selected");
+            el.classList.add("cl-flash");
+        });
+        setTimeout(() => {
+            used.forEach(idx => letterElements[idx].el.classList.remove("cl-flash"));
+        }, 600);
+
+        score += 10;
+        document.getElementById("scoreDisplay").innerText = score;
+        foundWords++;
+        updateProgress();
+        launchConfetti();
+        showNotif("✅ +" + 10 + " pts — " + word + " 🌿", "success");
+
+        clearBadges();
+        clearCurrentLines();
+        selectedIndices = [];
+        updateCurrentWord();
+
+        if (foundWords === totalWords) setTimeout(triggerWin, 900);
+    });
+
+    if (!matched) {
+        wrongAttempts++;
+        dotCount = Math.min(dotCount+1, 5);
+        updateDots();
+        if (wrongAttempts % 5 === 0) {
+            score = Math.max(0, score-10);
+            document.getElementById("scoreDisplay").innerText = score;
+            showNotif("❌ " + word + " — 5 erreurs ! -10 pts", "wrong");
+        } else {
+            showNotif("❌ " + word + " — incorrect !", "wrong");
+        }
+        const d = document.getElementById("currentWordDisplay");
+        d.classList.add("wrong-shake");
+        setTimeout(() => d.classList.remove("wrong-shake"), 450);
+
+        selectedIndices.forEach(i => letterElements[i].el.classList.remove("cl-selected"));
+        clearBadges();
+        clearCurrentLines();
+        selectedIndices = [];
+        updateCurrentWord();
+    }
+}
+
+function clearSelection() {
+    selectedIndices.forEach(i => letterElements[i].el.classList.remove("cl-selected"));
+    clearBadges();
+    clearCurrentLines();
+    hideDragLine();
+    selectedIndices = [];
+    updateCurrentWord();
+}
+
+function updateDots() {
+    for (let i=0; i<5; i++) {
+        const dot = document.getElementById("dot"+i);
+        i < dotCount ? dot.classList.add("wrong") : dot.classList.remove("wrong");
+    }
+    if (wrongAttempts % 5 === 0) {
+        setTimeout(() => {
+            dotCount = 0;
+            for (let i=0; i<5; i++) document.getElementById("dot"+i).classList.remove("wrong");
+        }, 700);
+    }
+}
+
+function revealSlot(slot, word) {
+    slot.innerHTML = word;
+    slot.classList.add("correct");
+}
+
+function updateProgress() {
+    document.getElementById("progressBar").style.width = (foundWords/totalWords*100)+"%";
+    document.getElementById("progressText").innerHTML  =
+        foundWords + " / <span id='totalCount'>" + totalWords + "</span>";
+}
+
+function triggerWin() {
+    if (gameEnded) return;
+    gameEnded = true;
+    clearInterval(timerInterval);
+    launchConfetti(); launchConfetti();
+    fetch("/crossword/game/complete", {
+        method:"POST",
+        headers:{"Content-Type":"application/x-www-form-urlencoded"},
+        body:"level="+currentLevel+"&score="+score
+    });
+    if (isLastLevel) {
+        document.getElementById("winTitle").innerText = "🏆 Félicitations !";
+        document.getElementById("winSub").innerText   = "Score final : "+score+" pts — Tu as tout terminé !";
+        document.getElementById("nextBtn").innerText  = "🏠 Niveaux";
+        document.getElementById("nextBtn").onclick    = () => { window.location.href="/crossword/levels"; };
+    } else {
+        const next = parseInt(document.getElementById("nextLevel").innerText);
+        document.getElementById("winTitle").innerText = "🎉 Niveau 3 terminé !";
+        document.getElementById("winSub").innerText   = "Score : "+score+" pts — Continue !";
+        document.getElementById("nextBtn").onclick    = () => { window.location.href="/crossword/game/"+next; };
+    }
+    setTimeout(() => document.getElementById("winOverlay").classList.add("show"), 1200);
+}
+
+function triggerLose() {
+    if (gameEnded) return;
+    gameEnded = true;
+    document.getElementById("gameOverlay").classList.add("show");
+}
+
+function saveGame() {
+    if (gameEnded) return;
+    const foundWordsList = [];
+    document.querySelectorAll(".word-slot.correct").forEach(s => foundWordsList.push(s.dataset.word));
+    fetch("/crossword/game/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: "level=" + currentLevel
+            + "&score=" + score
+            + "&foundWords=" + foundWordsList.join(",")
+            + "&timeLeft=" + timerSeconds
+    }).then(r => r.text()).then(res => {
+        if (res === "ok") showNotif("💾 Partie sauvegardée !", "success");
+        else showNotif("❌ Erreur de sauvegarde", "wrong");
+    });
+}
+
+function showNotif(msg, type) {
+    const n = document.getElementById("notif");
+    n.innerText = msg;
+    n.className = "notif "+type+" show";
+    setTimeout(() => n.classList.remove("show"), 2600);
+}
+
+function launchConfetti() {
+    const colors = ["#66bb6a","#2e7d32","#c8e6c9","#f9a825","#e91e63","#a5d6a7","#fff176"];
+    for (let i=0; i<30; i++) {
+        const p = document.createElement("div");
+        p.className = "confetti-piece";
+        p.style.left   = Math.random()*100+"vw";
+        p.style.top    = "-10px";
+        p.style.background = colors[Math.floor(Math.random()*colors.length)];
+        p.style.width  = (8+Math.random()*10)+"px";
+        p.style.height = (8+Math.random()*10)+"px";
+        p.style.animationDelay    = (Math.random()*0.5)+"s";
+        p.style.animationDuration = (1+Math.random()*1.2)+"s";
+        document.body.appendChild(p);
+        setTimeout(() => p.remove(), 2200);
+    }
+}
+</script>
+</body>
+</html>

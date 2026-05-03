@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Bienvenue - Crossword Quest</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Nunito', Arial, sans-serif;
+            background: linear-gradient(135deg, #f48fb1 0%, #fce4ec 35%, #e1bee7 65%, #b39ddb 100%);
+            padding: 2rem 1rem;
+            position: relative;
+            transition: opacity 1s ease;
+            overflow: hidden;
+        }
+	
+		.fade-out {
+		    opacity: 0;
+		}
+        /* ── Lettres fond balançantes (Conservé de Register) ── */
+        .bg-letter {
+            position: fixed;
+            font-family: 'Fredoka One', cursive;
+            font-size: 2.2rem;
+            color: rgba(255,255,255,0.28);
+            pointer-events: none;
+            animation: swing var(--dur, 9s) ease-in-out infinite;
+            transform-origin: 50% 0;
+            z-index: 0;
+        }
+
+        @keyframes swing {
+            0%   { transform: rotate(-7deg); }
+            50%  { transform: rotate(7deg); }
+            100% { transform: rotate(-7deg); }
+        }
+
+        /* ── Carte principale (Style cohérent) ── */
+        .card {
+            background: white;
+            border-radius: 28px;
+            padding: 40px 36px;
+            width: 420px;
+            box-shadow: 0 20px 50px rgba(173,20,87,0.15);
+            text-align: center;
+            position: relative;
+            z-index: 1;
+            animation: slideUp 0.6s cubic-bezier(0.16,1,0.3,1) both;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ── Section Logo (Adapté de l'Option C avec animation) ── */
+        .logo-container {
+            position: relative;
+            display: inline-block;
+            margin-bottom: 25px;
+        }
+
+        /* La grille de mots croisés */
+        .crossword-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 45px);
+            grid-template-rows: repeat(3, 45px);
+            gap: 6px;
+            justify-content: center;
+            /* Animation d'apparition en fondu pour la grille */
+            animation: fadeInGrid 1s ease-out both;
+        }
+
+        @keyframes fadeInGrid {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .grid-tile {
+            background: #f3e5f5; /* Couleur douce pour la grille */
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Fredoka One', cursive;
+            font-size: 1.5rem;
+            color: #7c3aed; /* Violet pour les lettres */
+            box-shadow: inset 0 -3px 0 rgba(0,0,0,0.1);
+        }
+
+        /* Tuiles spéciales (lettres vertes comme dans le logo) */
+        .tile-special {
+            color: #10b981; /* Vert émeraude */
+            font-weight: bold;
+        }
+
+        /* Tuile centrale vide (là où le crayon écrit) */
+        .tile-empty {
+            background: #fff;
+            border: 2px dashed #ce93d8;
+            box-shadow: none;
+        }
+
+        /* Le crayon animé */
+        .pencil-icon {
+            position: absolute;
+            top: -15px;
+            right: -25px;
+            width: 40px;
+            height: 40px;
+            /* Animation complexe du crayon (tracé + rotation) */
+            animation: pencilDraw 2s ease-in-out infinite alternate;
+            transform-origin: bottom left;
+            z-index: 2;
+        }
+
+        @keyframes pencilDraw {
+            0% {
+                transform: translate(0, 0) rotate(0deg);
+            }
+            20% {
+                transform: translate(-15px, 15px) rotate(-10deg); /* Position de départ du tracé */
+            }
+            50% {
+                transform: translate(-45px, 45px) rotate(-20deg); /* Fin du tracé */
+            }
+            80% {
+                transform: translate(-15px, 15px) rotate(-10deg); /* Retour */
+            }
+            100% {
+                transform: translate(0, 0) rotate(0deg);
+            }
+        }
+
+        /* ── Titre et Sous-titre ── */
+        h1 {
+            font-family: 'Fredoka One', cursive;
+            font-size: 28px;
+            color: #880e4f;
+            margin: 0 0 8px;
+            letter-spacing: 0.5px;
+        }
+
+        .subtitle {
+            font-size: 14px;
+            color: #90a4ae;
+            margin-bottom: 35px;
+            line-height: 1.5;
+        }
+
+        /* ── Boutons d'action (Style cohérent) ── */
+        .action-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 16px;
+            font-family: 'Fredoka One', cursive;
+            letter-spacing: 0.5px;
+            transition: 0.25s;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Bouton principal (Jouer / S'inscrire) */
+        .btn-primary {
+            background: linear-gradient(135deg, #e91e8c, #ce93d8);
+            color: white;
+            box-shadow: 0 5px 18px rgba(233,30,140,0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(233,30,140,0.4);
+        }
+
+        /* Bouton secondaire (Se connecter) */
+        .btn-secondary {
+            background: white;
+            color: #e91e8c;
+            border: 2px solid #fce4ec;
+        }
+
+        .btn-secondary:hover {
+            background: #fce4ec;
+            border-color: #f48fb1;
+        }
+
+        .btn:active { transform: translateY(0); }
+
+        /* Animation de brillance (Conservé) */
+        .btn-shine {
+            position: absolute;
+            top: 0; left: -100%;
+            width: 55%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.22), transparent);
+            animation: shine 3s infinite;
+        }
+
+        @keyframes shine {
+            0%      { left: -100%; }
+            40%,100%{ left: 160%; }
+        }
+
+        /* ── Séparateur ── */
+        .divider {
+            margin: 25px 0;
+            border: none;
+            border-top: 2px solid #fce4ec;
+        }
+
+        /* ── Pied de page ── */
+        .footer-text {
+            font-size: 12px;
+            color: #b0bec5;
+        }
+    </style>
+</head>
+<body th:data-context-path="@{/}">
+<div class="bg-letter" style="top:5%;left:3%;--dur:8s;animation-delay:0s">A</div>
+<div class="bg-letter" style="top:8%;left:85%;--dur:11s;animation-delay:-2s">Z</div>
+<div class="bg-letter" style="top:25%;left:7%;--dur:9.5s;animation-delay:-1s">W</div>
+<div class="bg-letter" style="top:45%;left:90%;--dur:10s;animation-delay:-4s">X</div>
+<div class="bg-letter" style="top:62%;left:4%;--dur:13s;animation-delay:-3s">Q</div>
+<div class="bg-letter" style="top:75%;left:83%;--dur:8.5s;animation-delay:-5s">K</div>
+<div class="bg-letter" style="top:38%;left:50%;--dur:12s;animation-delay:-1.5s">J</div>
+<div class="bg-letter" style="top:85%;left:30%;--dur:9s;animation-delay:-6s">V</div>
+<div class="bg-letter" style="top:18%;left:55%;--dur:10.5s;animation-delay:-2.5s">M</div>
+<div class="bg-letter" style="top:70%;left:60%;--dur:7.5s;animation-delay:-3.5s">R</div>
+<div class="bg-letter" style="top:90%;left:70%;--dur:11.5s;animation-delay:-0.5s">N</div>
+<div class="bg-letter" style="top:52%;left:20%;--dur:9s;animation-delay:-7s">T</div>
+
+<div class="card">
+
+    <div class="logo-container">
+        <svg class="pencil-icon" viewBox="0 0 24 24" fill="none">
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" fill="#f59e0b"/> <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" stroke="#b45309" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M3 21l2-2" stroke="#b45309" stroke-width="1.5" stroke-linecap="round"/> </svg>
+
+        <div class="crossword-grid">
+            <div class="grid-tile">C</div>
+            <div class="grid-tile tile-special">R</div> <div class="grid-tile">O</div>
+            <div class="grid-tile">S</div>
+            <div class="grid-tile tile-special tile-empty"> </div> <div class="grid-tile">S</div>
+            <div class="grid-tile">W</div>
+            <div class="grid-tile tile-special">O</div> <div class="grid-tile">D</div>
+        </div>
+    </div>
+
+    <h1>Crossword Quest</h1>
+    <p class="subtitle">Prêt à relever le défi ? Faites travailler vos méninges et découvrez des mots cachés !</p>
+
+ <p class="footer-text">Loading...</p>
+</div>
+<script>
+    const contextPath = document.body.getAttribute("data-context-path");
+
+    if (sessionStorage.getItem("visited")) {
+        window.location.href = contextPath + "login-page";
+    } else {
+        sessionStorage.setItem("visited", "true");
+
+        setTimeout(() => {
+            document.body.classList.add("fade-out");
+        }, 4000);
+
+        setTimeout(() => {
+            window.location.href = contextPath + "login-page";
+        }, 5000);
+    }
+</script>
+</body>
+
+</html>

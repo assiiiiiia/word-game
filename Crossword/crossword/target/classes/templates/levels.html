@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Niveaux</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Nunito', Arial, sans-serif;
+            background: linear-gradient(135deg, #f48fb1 0%, #fce4ec 35%, #e1bee7 65%, #b39ddb 100%);
+            padding: 40px 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        .bg-letter {
+            position: fixed;
+            font-family: 'Fredoka One', cursive;
+            font-size: 2.2rem;
+            color: rgba(255,255,255,0.28);
+            pointer-events: none;
+            animation: swing var(--dur, 9s) ease-in-out infinite;
+            transform-origin: 50% 0;
+        }
+        @keyframes swing {
+            0%   { transform: rotate(-7deg); }
+            50%  { transform: rotate(7deg);  }
+            100% { transform: rotate(-7deg); }
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 44px;
+            animation: slideUp .5s cubic-bezier(.16,1,.3,1) both;
+        }
+
+        .logo-tiles {
+            display: flex; gap: 5px;
+            justify-content: center;
+            margin-bottom: 12px;
+        }
+        .ltile {
+            width: 38px; height: 38px;
+            border-radius: 9px;
+            display: flex; align-items: center; justify-content: center;
+            font-family: 'Fredoka One', cursive;
+            font-size: 1.15rem; color: white;
+            position: relative;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.18);
+        }
+        .ltile .tn {
+            position: absolute; top: 2px; left: 3px;
+            font-size: 7px; font-family: 'Nunito', sans-serif;
+            font-weight: 700; opacity: 0.55;
+        }
+        .t1 { background: #f59e0b; }
+        .t2 { background: #0ea5e9; }
+        .t3 { background: #16a34a; }
+        .t4 { background: #e91e8c; }
+
+        .page-title {
+            font-family: 'Fredoka One', cursive;
+            font-size: 30px; color: #880e4f;
+            text-shadow: 0 2px 8px rgba(233,30,140,0.2);
+            margin-bottom: 5px;
+        }
+        .page-subtitle {
+            font-size: 13px;
+            color: rgba(136,14,79,0.55);
+            font-weight: 700;
+        }
+
+        .score-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: white;
+            border-radius: 50px;
+            padding: 10px 20px;
+            margin-bottom: 36px;
+            box-shadow: 0 6px 20px rgba(173,20,87,0.14);
+            animation: slideUp .5s .05s cubic-bezier(.16,1,.3,1) both;
+        }
+        .score-icon { font-size: 20px; }
+        .score-text {
+            font-family: 'Fredoka One', cursive;
+            font-size: 17px; color: #880e4f;
+        }
+        .score-val { color: #e91e8c; }
+
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 18px;
+            width: 100%;
+            max-width: 680px;
+            margin-bottom: 40px;
+        }
+
+        .level-card {
+            background: white;
+            border-radius: 24px;
+            padding: 28px 16px 24px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            cursor: pointer;
+            border: none;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 32px rgba(173,20,87,0.13);
+            transition: transform .28s cubic-bezier(.34,1.56,.64,1), box-shadow .28s;
+        }
+        .level-card:nth-child(1) { animation: slideUp .5s .10s cubic-bezier(.16,1,.3,1) both; }
+        .level-card:nth-child(2) { animation: slideUp .5s .20s cubic-bezier(.16,1,.3,1) both; }
+        .level-card:nth-child(3) { animation: slideUp .5s .30s cubic-bezier(.16,1,.3,1) both; }
+
+        .level-card:not(.locked):hover {
+            transform: translateY(-9px) scale(1.04);
+            box-shadow: 0 22px 50px rgba(173,20,87,0.22);
+        }
+
+        .level-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 5px;
+            border-radius: 24px 24px 0 0;
+        }
+
+        /* ── NIVEAU 1 : JAUNE ── */
+        .card-lv1::before { background: linear-gradient(90deg, #f59e0b, #fde68a); }
+        .card-lv1 .lv-number-wrap { background: linear-gradient(135deg, #fef9c3, #fde68a); }
+        .card-lv1 .lv-big-num { color: #d97706; }
+        .card-lv1 .card-name  { color: #92400e; }
+        .card-lv1 .diff-pill  { background: #fef9c3; color: #92400e; }
+        .card-lv1 .diff-dot   { background: #f59e0b; }
+
+        /* ── NIVEAU 2 : BLEU ── */
+        .card-lv2::before { background: linear-gradient(90deg, #0ea5e9, #7dd3fc); }
+        .card-lv2 .lv-number-wrap { background: linear-gradient(135deg, #e0f2fe, #bae6fd); }
+        .card-lv2 .lv-big-num { color: #0284c7; }
+        .card-lv2 .card-name  { color: #0c4a6e; }
+        .card-lv2 .diff-pill  { background: #e0f2fe; color: #0c4a6e; }
+        .card-lv2 .diff-dot   { background: #0ea5e9; }
+
+        /* ── NIVEAU 3 : VERT ── */
+        .card-lv3::before { background: linear-gradient(90deg, #16a34a, #86efac); }
+        .card-lv3 .lv-number-wrap { background: linear-gradient(135deg, #dcfce7, #bbf7d0); }
+        .card-lv3 .lv-big-num { color: #15803d; }
+        .card-lv3 .card-name  { color: #14532d; }
+        .card-lv3 .diff-pill  { background: #dcfce7; color: #14532d; }
+        .card-lv3 .diff-dot   { background: #16a34a; }
+
+        .lv-number-wrap {
+            width: 80px; height: 80px;
+            border-radius: 22px;
+            display: flex; align-items: center; justify-content: center;
+            margin-bottom: 14px;
+        }
+        .lv-big-num {
+            font-family: 'Fredoka One', cursive;
+            font-size: 42px; line-height: 1;
+        }
+        .card-name {
+            font-family: 'Fredoka One', cursive;
+            font-size: 17px;
+            margin-bottom: 8px;
+        }
+        .diff-pill {
+            display: inline-flex; align-items: center; gap: 5px;
+            padding: 5px 14px; border-radius: 30px;
+            font-size: 11px; font-weight: 800;
+            letter-spacing: 0.5px; text-transform: uppercase;
+        }
+        .diff-dot { width: 7px; height: 7px; border-radius: 50%; }
+
+        /* ── CARTE VERROUILLÉE ── */
+        .level-card.locked {
+            cursor: not-allowed;
+            background: #f0f0f0;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+        }
+        .level-card.locked::before { background: #d0d0d0 !important; }
+        .level-card.locked .lv-number-wrap {
+            background: #e0e0e0 !important;
+            filter: grayscale(1);
+        }
+        .level-card.locked .lv-big-num { color: #bbb !important; }
+        .level-card.locked .card-name  { color: #bbb !important; }
+        .level-card.locked .diff-pill  { background: #e8e8e8 !important; color: #bbb !important; }
+        .level-card.locked .diff-dot   { background: #ccc !important; }
+
+        .lock-overlay {
+            position: absolute; inset: 0;
+            background: rgba(240,240,240,0.55);
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            gap: 6px; border-radius: 24px;
+            backdrop-filter: blur(1px);
+        }
+        .lock-icon {
+            font-size: 34px;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.12));
+            animation: lockBounce 2.5s ease-in-out infinite;
+        }
+        @keyframes lockBounce {
+            0%,100% { transform: translateY(0) scale(1);       }
+            50%     { transform: translateY(-4px) scale(1.06); }
+        }
+        .lock-score-needed {
+            background: white; border-radius: 20px;
+            padding: 4px 12px; font-size: 11px;
+            font-weight: 800; color: #999;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .lock-score-needed span { color: #e91e8c; }
+
+        @keyframes shake {
+            0%,100%{ transform: translateX(0);   }
+            20%    { transform: translateX(-6px); }
+            40%    { transform: translateX(6px);  }
+            60%    { transform: translateX(-4px); }
+            80%    { transform: translateX(4px);  }
+        }
+        .level-card.shaking { animation: shake .4s ease both; }
+
+        .back-btn {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 13px 34px;
+            background: white; color: #880e4f;
+            border-radius: 14px; text-decoration: none;
+            font-weight: 800; font-size: 14px;
+            box-shadow: 0 6px 20px rgba(173,20,87,0.18);
+            transition: transform .25s, box-shadow .25s;
+            animation: slideUp .5s .35s cubic-bezier(.16,1,.3,1) both;
+        }
+        .back-btn:hover { transform: translateY(-3px); box-shadow: 0 12px 30px rgba(173,20,87,0.28); }
+
+        .modal-overlay {
+            position: fixed; inset: 0;
+            background: rgba(173,20,87,0.35);
+            backdrop-filter: blur(6px);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 999; opacity: 0; pointer-events: none;
+            transition: opacity .25s; padding: 20px;
+        }
+        .modal-overlay.show { opacity: 1; pointer-events: all; }
+        .modal {
+            background: white; border-radius: 28px;
+            padding: 36px 30px 28px; width: 100%; max-width: 360px;
+            text-align: center;
+            box-shadow: 0 30px 80px rgba(173,20,87,0.3);
+            transform: scale(.85) translateY(30px);
+            transition: transform .35s cubic-bezier(.34,1.56,.64,1);
+            position: relative; overflow: hidden;
+        }
+        .modal::before {
+            content: ''; position: absolute;
+            top: 0; left: 0; right: 0; height: 5px;
+            background: linear-gradient(90deg, #f59e0b, #0ea5e9, #16a34a);
+        }
+        .modal-overlay.show .modal { transform: scale(1) translateY(0); }
+        .modal-tiles { display: flex; gap: 5px; justify-content: center; margin-bottom: 14px; }
+        .modal-tile {
+            width: 32px; height: 32px; border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-family: 'Fredoka One', cursive; font-size: .95rem; color: white;
+        }
+        .modal-title { font-family: 'Fredoka One', cursive; font-size: 22px; color: #880e4f; margin-bottom: 6px; }
+        .modal-desc  { font-size: 13px; color: #aaa; font-weight: 600; margin-bottom: 26px; line-height: 1.6; }
+        .modal-desc strong { color: #666; }
+        .modal-actions { display: flex; flex-direction: column; gap: 11px; }
+        .btn-resume {
+            padding: 14px;
+            background: linear-gradient(135deg, #e91e8c, #ce93d8);
+            color: white; border: none; border-radius: 13px;
+            font-family: 'Fredoka One', cursive; font-size: 16px;
+            cursor: pointer;
+            box-shadow: 0 6px 20px rgba(233,30,140,0.3);
+            transition: transform .2s, box-shadow .2s;
+            position: relative; overflow: hidden;
+        }
+        .btn-resume .shine {
+            position: absolute; top: 0; left: -100%; width: 55%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.22), transparent);
+            animation: shine 2.5s infinite;
+        }
+        @keyframes shine { 0%{ left:-100%; } 40%,100%{ left:160%; } }
+        .btn-resume:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(233,30,140,0.42); }
+        .btn-new {
+            padding: 13px; background: #fce4ec; color: #880e4f;
+            border: 2px solid #f8bbd0; border-radius: 13px;
+            font-family: 'Nunito', sans-serif; font-size: 14px; font-weight: 800;
+            cursor: pointer; transition: background .2s, transform .2s;
+        }
+        .btn-new:hover { background: #f8bbd0; transform: translateY(-1px); }
+        .btn-cancel {
+            background: none; border: none; color: #ccc;
+            font-family: 'Nunito', sans-serif; font-size: 12px; font-weight: 700;
+            cursor: pointer; padding: 4px; transition: color .2s;
+        }
+        .btn-cancel:hover { color: #e91e8c; }
+
+        .modal-locked .modal::before { background: linear-gradient(90deg, #bbb, #ddd, #bbb); }
+        .lock-modal-icon  { font-size: 50px; margin-bottom: 12px; display: block; }
+        .lock-modal-title { font-family: 'Fredoka One', cursive; font-size: 22px; color: #888; margin-bottom: 6px; }
+        .lock-modal-desc  { font-size: 13px; color: #aaa; font-weight: 600; margin-bottom: 20px; line-height: 1.6; }
+        .lock-modal-desc strong { color: #e91e8c; }
+        .progress-wrap {
+            background: #f5f5f5; border-radius: 30px;
+            height: 12px; width: 100%; margin-bottom: 18px; overflow: hidden;
+        }
+        .progress-bar {
+            height: 100%; border-radius: 30px;
+            background: linear-gradient(90deg, #e91e8c, #ce93d8);
+            transition: width .6s cubic-bezier(.34,1.56,.64,1);
+        }
+        .progress-label { font-size: 11px; font-weight: 800; color: #bbb; margin-bottom: 20px; }
+        .progress-label span { color: #e91e8c; }
+        .btn-ok {
+            padding: 13px 30px; background: #f5f5f5; color: #999;
+            border: none; border-radius: 13px;
+            font-family: 'Nunito', sans-serif; font-size: 14px; font-weight: 800;
+            cursor: pointer; transition: background .2s;
+        }
+        .btn-ok:hover { background: #eee; }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(24px); }
+            to   { opacity: 1; transform: translateY(0);    }
+        }
+    </style>
+</head>
+<body>
+
+<div class="bg-letter" style="top:5%;left:3%;--dur:8s">A</div>
+<div class="bg-letter" style="top:8%;left:85%;--dur:11s">Z</div>
+<div class="bg-letter" style="top:28%;left:7%;--dur:9s">W</div>
+<div class="bg-letter" style="top:50%;left:91%;--dur:10s">X</div>
+<div class="bg-letter" style="top:68%;left:4%;--dur:12s">Q</div>
+<div class="bg-letter" style="top:80%;left:82%;--dur:9s">K</div>
+<div class="bg-letter" style="top:42%;left:48%;--dur:13s">M</div>
+
+<div class="header">
+    <div class="logo-tiles">
+        <div class="ltile t1"><span class="tn">1</span>W</div>
+        <div class="ltile t2"><span class="tn">2</span>O</div>
+        <div class="ltile t3"><span class="tn">3</span>R</div>
+        <div class="ltile t4"><span class="tn">4</span>D</div>
+    </div>
+    <h1 class="page-title">Choisir un niveau</h1>
+    <p class="page-subtitle">Sélectionne un niveau pour jouer 🎮</p>
+</div>
+
+<div class="score-bar">
+    <span class="score-icon">⭐</span>
+    <span class="score-text">Score : <span class="score-val" th:text="${playerScore}">0</span> pts</span>
+</div>
+
+<span id="savedLevel"  th:text="${savedLevel}"  style="display:none">-1</span>
+<span id="playerScore" th:text="${playerScore}" style="display:none">0</span>
+
+<div class="cards-grid">
+
+    <button class="level-card card-lv1" id="card-1" onclick="handleLevelClick(1)">
+        <div class="lv-number-wrap"><span class="lv-big-num">1</span></div>
+        <div class="card-name">Niveau 1</div>
+        <div class="diff-pill"><div class="diff-dot"></div>Facile</div>
+    </button>
+
+    <button class="level-card card-lv2" id="card-2" onclick="handleLevelClick(2)">
+        <div class="lv-number-wrap"><span class="lv-big-num">2</span></div>
+        <div class="card-name">Niveau 2</div>
+        <div class="diff-pill"><div class="diff-dot"></div>Moyen</div>
+        <div class="lock-overlay" id="lock-2" style="display:none">
+            <span class="lock-icon">🔒</span>
+            <div class="lock-score-needed">Score requis : <span>40 pts</span></div>
+        </div>
+    </button>
+
+    <button class="level-card card-lv3" id="card-3" onclick="handleLevelClick(3)">
+        <div class="lv-number-wrap"><span class="lv-big-num">3</span></div>
+        <div class="card-name">Niveau 3</div>
+        <div class="diff-pill"><div class="diff-dot"></div>Difficile</div>
+        <div class="lock-overlay" id="lock-3" style="display:none">
+            <span class="lock-icon">🔒</span>
+            <div class="lock-score-needed">Score requis : <span>60 pts</span></div>
+        </div>
+    </button>
+
+</div>
+
+<a th:href="@{/home}" class="back-btn">⬅ Retour</a>
+
+<div class="modal-overlay" id="modalResume">
+    <div class="modal">
+        <div class="modal-tiles">
+            <div class="modal-tile" style="background:#f59e0b">S</div>
+            <div class="modal-tile" style="background:#0ea5e9">A</div>
+            <div class="modal-tile" style="background:#16a34a">V</div>
+            <div class="modal-tile" style="background:#e91e8c">E</div>
+        </div>
+        <div class="modal-title" id="modalTitle">Niveau X</div>
+        <div class="modal-desc">Tu as une <strong>partie sauvegardée</strong> sur ce niveau.<br>Que veux-tu faire ?</div>
+        <div class="modal-actions">
+            <button class="btn-resume" onclick="resumeGame()">
+                <div class="shine"></div>▶ Reprendre la partie
+            </button>
+            <button class="btn-new" onclick="newGame()">🔄 Nouvelle partie</button>
+            <button class="btn-cancel" onclick="closeModal('modalResume')">Annuler</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay modal-locked" id="modalLocked">
+    <div class="modal">
+        <span class="lock-modal-icon">🔒</span>
+        <div class="lock-modal-title" id="lockTitle">Niveau verrouillé</div>
+        <div class="lock-modal-desc" id="lockDesc">
+            Il te faut <strong id="lockRequired">40 pts</strong> pour débloquer ce niveau.<br>
+            Continue à jouer pour progresser !
+        </div>
+        <div class="progress-wrap">
+            <div class="progress-bar" id="lockProgressBar" style="width:0%"></div>
+        </div>
+        <div class="progress-label">
+            <span id="lockCurrent">0</span> / <span id="lockTarget">60</span> pts
+        </div>
+        <div class="modal-actions">
+            <button class="btn-ok" onclick="closeModal('modalLocked')">Compris !</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const savedLevel  = parseInt(document.getElementById("savedLevel").innerText)  || -1;
+    const playerScore = parseInt(document.getElementById("playerScore").innerText) || 0;
+
+    const UNLOCK = { 1: 0, 2: 40, 3: 60 };
+    const NAMES  = { 1: 'Niveau 1', 2: 'Niveau 2', 3: 'Niveau 3' };
+
+    let targetLevel = -1;
+
+    [2, 3].forEach(lv => {
+        if (playerScore < UNLOCK[lv]) {
+            const card = document.getElementById("card-" + lv);
+            const lock = document.getElementById("lock-" + lv);
+            card.classList.add("locked");
+            lock.style.display = "flex";
+        }
+    });
+
+    function handleLevelClick(level) {
+        targetLevel = level;
+
+        if (playerScore < UNLOCK[level]) {
+            const card = document.getElementById("card-" + level);
+            card.classList.remove("shaking");
+            void card.offsetWidth;
+            card.classList.add("shaking");
+            card.addEventListener("animationend", () => card.classList.remove("shaking"), { once: true });
+
+            const required = UNLOCK[level];
+            const pct      = Math.min(100, Math.round((playerScore / required) * 100));
+            document.getElementById("lockTitle").innerText    = NAMES[level];
+            document.getElementById("lockRequired").innerText = required + " pts";
+            document.getElementById("lockCurrent").innerText  = playerScore;
+            document.getElementById("lockTarget").innerText   = required;
+            document.getElementById("lockProgressBar").style.width = "0%";
+            document.getElementById("modalLocked").classList.add("show");
+            setTimeout(() => {
+                document.getElementById("lockProgressBar").style.width = pct + "%";
+            }, 120);
+            return;
+        }
+
+        if (savedLevel === level) {
+            document.getElementById("modalTitle").innerText = NAMES[level];
+            document.getElementById("modalResume").classList.add("show");
+        } else {
+            window.location.href = "/crossword/game/" + level;
+        }
+    }
+
+    function resumeGame() { window.location.href = "/crossword/game/resume"; }
+    function newGame()     { window.location.href = "/crossword/game/" + targetLevel; }
+
+    function closeModal(id) {
+        document.getElementById(id).classList.remove("show");
+    }
+
+    document.querySelectorAll(".modal-overlay").forEach(el => {
+        el.addEventListener("click", function(e) {
+            if (e.target === this) this.classList.remove("show");
+        });
+    });
+</script>
+
+</body>
+</html>

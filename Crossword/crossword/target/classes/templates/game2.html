@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Game - Niveau 2</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #e3f2fd, #e8eaf6);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+        .header {
+            width: 100%; max-width: 900px;
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 20px;
+        }
+        .back-btn {
+            padding: 10px 18px; background: rgba(255,255,255,0.5); color: #1565c0;
+            border-radius: 12px; text-decoration: none; font-weight: bold; font-size: 14px;
+            border: 2px solid rgba(21,101,192,0.3); transition: 0.3s;
+        }
+        .back-btn:hover { background: rgba(255,255,255,0.8); }
+        .level-badge {
+            background: white; color: #1565c0; font-weight: bold; font-size: 16px;
+            padding: 10px 22px; border-radius: 20px; box-shadow: 0 4px 12px rgba(21,101,192,0.2);
+        }
+        .score-badge {
+            background: rgba(255,255,255,0.5); color: #1565c0; font-weight: bold;
+            font-size: 16px; padding: 10px 22px; border-radius: 20px;
+            border: 2px solid rgba(21,101,192,0.3);
+        }
+        .timer-box { width: 100%; max-width: 900px; margin-bottom: 15px; }
+        .timer-label {
+            color: #1565c0; font-weight: bold; font-size: 15px;
+            margin-bottom: 6px; display: flex; justify-content: space-between;
+        }
+        .timer-bar-bg {
+            width: 100%; height: 14px; background: rgba(255,255,255,0.5);
+            border-radius: 50px; overflow: hidden;
+        }
+        .timer-bar {
+            height: 100%; background: linear-gradient(135deg, #64b5f6, #1565c0);
+            border-radius: 50px; transition: width 1s linear, background 0.5s;
+        }
+        .timer-bar.warning { background: linear-gradient(135deg, #ff9800, #f57c00); }
+        .timer-bar.danger  { background: linear-gradient(135deg, #ef5350, #e53935); }
+        .main-card {
+            background: white; border-radius: 30px; padding: 25px;
+            width: 100%; max-width: 900px;
+            box-shadow: 0 20px 50px rgba(21,101,192,0.12);
+            display: flex; gap: 24px; align-items: flex-start;
+        }
+        .image-box {
+            display: flex; flex-direction: column;
+            align-items: center; gap: 10px; flex-shrink: 0;
+        }
+        .image-box img {
+            width: 250px; height: 250px; object-fit: fill;
+            border-radius: 18px; box-shadow: 0 8px 20px rgba(21,101,192,0.2);
+        }
+        .image-caption {
+            font-size: 12px; color: #64b5f6; font-weight: bold;
+            text-align: center; max-width: 250px;
+            letter-spacing: 0.5px; line-height: 1.5;
+            background: #e3f2fd; border-radius: 20px;
+            padding: 6px 14px; border: 1.5px solid #90caf9;
+        }
+        .found-counter {
+            font-size: 15px; font-weight: bold; color: #1565c0;
+            background: #e3f2fd; border-radius: 50px;
+            padding: 7px 22px; border: 2px solid #64b5f6;
+            text-align: center; width: 100%;
+        }
+        .game-area {
+            flex: 1; display: flex; flex-direction: column; align-items: center; gap: 12px;
+        }
+        .game-title {
+            font-size: 12px; color: #64b5f6; font-weight: bold;
+            text-transform: uppercase; letter-spacing: 1px; text-align: center;
+        }
+        .current-row {
+            width: 100%; display: flex; align-items: center; gap: 10px;
+        }
+        .current-word {
+            flex: 1; min-height: 46px; display: flex; align-items: center;
+            justify-content: center; font-size: 20px; font-weight: bold;
+            color: #1565c0; letter-spacing: 6px; background: #e3f2fd;
+            border-radius: 50px; border: 2px solid #64b5f6;
+        }
+        .backspace-btn {
+            width: 46px; height: 46px;
+            background: linear-gradient(135deg, #64b5f6, #1565c0);
+            color: white; border: none; border-radius: 50%; font-size: 18px;
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 4px 12px rgba(21,101,192,0.35); flex-shrink: 0;
+        }
+        .words {
+            display: flex; flex-wrap: wrap; gap: 8px;
+            justify-content: center; width: 100%;
+        }
+        .word-slot {
+            padding: 8px 16px; min-width: 80px; background: #fafafa;
+            border: 2px solid #bbdefb; border-radius: 50px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 13px; font-weight: bold; color: #90caf9; transition: 0.3s;
+        }
+        .word-slot.correct {
+            background: linear-gradient(135deg, #1565c0, #64b5f6);
+            border-color: #1565c0; color: white;
+            box-shadow: 0 4px 14px rgba(21,101,192,0.4);
+        }
+        .word-search-grid {
+            display: inline-grid;
+            gap: 3px;
+            background: #fafafa;
+            border-radius: 18px;
+            padding: 10px;
+            border: 2px solid #bbdefb;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+        }
+        .grid-cell {
+            width: 34px; height: 34px;
+            background: white;
+            border: 2px solid #90caf9;
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 13px; font-weight: bold; color: #1565c0;
+            cursor: pointer;
+            transition: all 0.15s;
+            touch-action: none;
+        }
+        .grid-cell:hover { background: #e3f2fd; }
+        .grid-cell.active {
+            background: linear-gradient(135deg, #1565c0, #64b5f6);
+            color: white; border-color: #1565c0;
+            transform: scale(1.1);
+            box-shadow: 0 4px 10px rgba(21,101,192,0.4);
+        }
+        .grid-cell.found {
+            background: linear-gradient(135deg, #64b5f6, #e3f2fd);
+            color: #1565c0; border-color: #64b5f6;
+        }
+        .btn-row {
+            display: flex; gap: 10px; justify-content: center; width: 100%;
+        }
+        .clear-btn, .save-btn {
+            padding: 10px 22px;
+            background: linear-gradient(135deg, #64b5f6, #1565c0);
+            color: white; border: none; border-radius: 50px; cursor: pointer;
+            font-size: 14px; font-weight: bold;
+            box-shadow: 0 4px 12px rgba(21,101,192,0.35);
+            transition: 0.3s;
+        }
+        .clear-btn:hover, .save-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 7px 18px rgba(21,101,192,0.5);
+        }
+        .drag-hint { font-size: 11px; color: #bbb; text-align: center; }
+        .notif {
+            position: fixed; bottom: 30px; left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            padding: 14px 30px; border-radius: 50px; font-size: 16px; font-weight: bold;
+            color: white; box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+            transition: all 0.4s ease; opacity: 0; z-index: 998; white-space: nowrap;
+        }
+        .notif.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+        .notif.success { background: linear-gradient(135deg, #64b5f6, #1565c0); }
+        .notif.win     { background: linear-gradient(135deg, #f48fb1, #e91e8c); }
+        .notif.finish  { background: linear-gradient(135deg, #f9a825, #fbc02d); }
+        .notif.error   { background: linear-gradient(135deg, #ef5350, #e53935); }
+        .notif.save    { background: linear-gradient(135deg, #64b5f6, #1565c0); }
+        .overlay {
+            display: none; position: fixed; inset: 0;
+            background: rgba(21,101,192,0.4); z-index: 999;
+            flex-direction: column; align-items: center; justify-content: center;
+        }
+        .overlay-card {
+            background: white; border-radius: 24px; padding: 40px 50px;
+            text-align: center; box-shadow: 0 20px 50px rgba(21,101,192,0.3);
+            animation: popIn 0.3s ease;
+        }
+        @keyframes popIn { from{transform:scale(0.8);opacity:0}to{transform:scale(1);opacity:1} }
+        .overlay-emoji { font-size: 55px; margin-bottom: 10px; }
+        .overlay-title { margin: 0 0 8px; color: #1565c0; font-size: 24px; font-weight: bold; }
+        .overlay-sub   { color: #64b5f6; margin: 0 0 28px; font-size: 15px; }
+        .retry-btn {
+            display: inline-block; padding: 14px 38px;
+            background: linear-gradient(135deg, #64b5f6, #1565c0);
+            color: white; border-radius: 50px; text-decoration: none;
+            font-weight: bold; font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <a th:href="@{/levels}" class="back-btn">⬅ Niveaux</a>
+    <div class="level-badge">🎯 Niveau <span th:text="${level}"></span></div>
+    <div class="score-badge">⭐ <span id="scoreDisplay">0</span> pts</div>
+</div>
+<div class="timer-box">
+    <div class="timer-label">
+        <span>⏱ Temps restant</span>
+        <span id="timerText">2:00</span>
+    </div>
+    <div class="timer-bar-bg"><div class="timer-bar" id="timerBar"></div></div>
+</div>
+
+<span id="nextLevel"       th:text="${level + 1}"       style="display:none"></span>
+<span id="currentLevel"    th:text="${level}"           style="display:none"></span>
+<span id="isLastLevel"     th:text="${isLastLevel}"     style="display:none"></span>
+<span id="savedScore"      th:text="${savedScore}"      style="display:none"></span>
+<span id="savedFoundWords" th:text="${savedFoundWords}" style="display:none"></span>
+<span id="savedTimeLeft"   th:text="${savedTimeLeft}"   style="display:none"></span>
+<span id="wordsData"       th:attr="data-words=${#strings.arrayJoin(words,',')}" style="display:none"></span>
+
+<div class="main-card">
+    <div class="image-box">
+        <img th:src="@{'/images/' + ${image}}" alt="image">
+        <div class="image-caption">
+            🖼️ Repère les mots cachés qui correspondent à cette image !
+        </div>
+        <div class="found-counter">
+            ✅ Mots trouvés : <span id="foundCount">0</span> / <span id="totalCount">0</span>
+        </div>
+    </div>
+    <div class="game-area">
+        <div class="game-title">🔍 Trouve les mots cachés dans la grille !</div>
+        <div class="current-row">
+            <div class="current-word" id="current">_ _ _</div>
+            <button class="backspace-btn" onclick="clearWord()">⌫</button>
+        </div>
+        <div class="words">
+            <div class="word-slot"
+                 th:each="w : ${words}"
+                 th:attr="data-word=${w}">_ _ _</div>
+        </div>
+        <div class="word-search-grid" id="wsGrid"></div>
+        <div class="drag-hint">☝️ Glisse sur les lettres adjacentes pour former un mot</div>
+        <div class="btn-row">
+            <button class="save-btn"  onclick="saveGame()">💾 Sauvegarder</button>
+            <button class="clear-btn" onclick="clearWord()">🗑 Effacer</button>
+        </div>
+    </div>
+</div>
+
+<div class="notif" id="notif"></div>
+<div class="overlay" id="overlay">
+    <div class="overlay-card">
+        <div class="overlay-emoji">⏰</div>
+        <h2 class="overlay-title">Temps écoulé !</h2>
+        <p class="overlay-sub">Tu peux réessayer le niveau 2</p>
+        <a th:href="@{/game/2}" class="retry-btn">🔄 Réessayer</a>
+    </div>
+</div>
+
+<script>
+const WORDS = document.getElementById("wordsData").dataset.words
+.split(",").map(w => w.trim().toUpperCase());
+
+const ROWS = 8, COLS = 8;
+let gridData = Array.from({length: ROWS}, () => Array(COLS).fill(null));
+
+const DIRECTIONS = [
+[0, 1], [1, 0], [1, 1], [0,-1], [-1,0], [1,-1],
+];
+
+const WORD_DIRS = [
+[0, 1], [1, 0], [1, 1], [0,-1], [1,-1],
+];
+
+function canPlace(word, r, c, dr, dc) {
+for (let i = 0; i < word.length; i++) {
+    let nr = r + i*dr, nc = c + i*dc;
+    if (nr < 0 || nr >= ROWS || nc < 0 || nc >= COLS) return false;
+    let cell = gridData[nr][nc];
+    if (cell !== null && cell.letter !== word[i]) return false;
+}
+return true;
+}
+
+function placeWord(word, wi) {
+let mainDir = WORD_DIRS[wi % WORD_DIRS.length];
+let fallbacks = DIRECTIONS.filter(d => !(d[0]===mainDir[0] && d[1]===mainDir[1]));
+let tryDirs = [mainDir, ...fallbacks];
+for (let dir of tryDirs) {
+    let [dr, dc] = dir;
+    for (let attempt = 0; attempt < 400; attempt++) {
+        let r = Math.floor(Math.random() * ROWS);
+        let c = Math.floor(Math.random() * COLS);
+        if (!canPlace(word, r, c, dr, dc)) continue;
+        for (let i = 0; i < word.length; i++) {
+            let nr = r + i*dr, nc = c + i*dc;
+            if (gridData[nr][nc] === null) {
+                gridData[nr][nc] = { letter: word[i], wordIndex: wi, dr, dc };
+            } else {
+                if (!gridData[nr][nc].wordIndexes) {
+                    gridData[nr][nc].wordIndexes = [gridData[nr][nc].wordIndex];
+                }
+                gridData[nr][nc].wordIndexes.push(wi);
+            }
+        }
+        return true;
+    }
+}
+return false;
+}
+
+function buildGridData() {
+gridData = Array.from({length: ROWS}, () => Array(COLS).fill(null));
+for (let wi = 0; wi < WORDS.length; wi++) {
+    placeWord(WORDS[wi], wi);
+}
+const filler = "BCDFGHJKMNQTUVWXYZ";
+for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+        if (!gridData[r][c]) {
+            gridData[r][c] = {
+                letter: filler[Math.floor(Math.random() * filler.length)],
+                wordIndex: -1
+            };
+        }
+    }
+}
+}
+
+buildGridData();
+
+const wsGrid = document.getElementById("wsGrid");
+wsGrid.style.gridTemplateColumns = `repeat(${COLS}, 34px)`;
+wsGrid.style.gridTemplateRows    = `repeat(${ROWS}, 34px)`;
+
+let cellEls = Array.from({length: ROWS}, () => Array(COLS).fill(null));
+let foundByWord = {};
+
+function renderGrid() {
+wsGrid.innerHTML = "";
+for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+        let div = document.createElement("div");
+        div.className = "grid-cell";
+        div.innerText = gridData[r][c].letter;
+        div.dataset.r = r;
+        div.dataset.c = c;
+        wsGrid.appendChild(div);
+        cellEls[r][c] = div;
+    }
+}
+}
+renderGrid();
+
+let current      = "";
+let score        = 0;
+let foundWords   = 0;
+let totalWords   = document.querySelectorAll(".word-slot").length;
+let currentLevel = parseInt(document.getElementById("currentLevel").innerText);
+let isLastLevel  = document.getElementById("isLastLevel").innerText === "true";
+let gameOver     = false;
+let isDragging   = false;
+let dragPath     = [];
+let dragDir      = null;
+
+// Initialiser le compteur
+document.getElementById("totalCount").innerText = totalWords;
+document.getElementById("foundCount").innerText = 0;
+
+let totalTime = 120;
+const stlRaw  = document.getElementById("savedTimeLeft").innerText.trim();
+let timeLeft  = (stlRaw && stlRaw !== "null") ? parseInt(stlRaw) : totalTime;
+
+function fmt(s) { return Math.floor(s/60)+":"+(s%60<10?"0":"")+s%60; }
+function updateTimer() {
+if (gameOver) return;
+let pct = (timeLeft/totalTime)*100;
+document.getElementById("timerText").innerText = fmt(timeLeft);
+let bar = document.getElementById("timerBar");
+bar.style.width = pct+"%";
+bar.className = pct>50?"timer-bar":pct>25?"timer-bar warning":"timer-bar danger";
+if (timeLeft<=0) { gameOver=true; document.getElementById("overlay").style.display="flex"; return; }
+timeLeft--; setTimeout(updateTimer,1000);
+}
+updateTimer();
+
+let savedScore = parseInt(document.getElementById("savedScore").innerText)||0;
+let savedFW    = document.getElementById("savedFoundWords").innerText;
+if (savedScore>0) { score=savedScore; document.getElementById("scoreDisplay").innerText=score; }
+if (savedFW) {
+savedFW.split(",").filter(w=>w).forEach(word=>{
+    document.querySelectorAll(".word-slot").forEach(slot=>{
+        if (slot.dataset.word===word) {
+            slot.innerHTML=word; slot.classList.add("correct"); foundWords++;
+            let wi=WORDS.indexOf(word.toUpperCase());
+            foundByWord[wi] = true;
+            for (let r=0;r<ROWS;r++) for (let c=0;c<COLS;c++)
+                if (gridData[r][c]&&gridData[r][c].wordIndex===wi)
+                    cellEls[r][c].classList.add("found");
+        }
+    });
+});
+document.getElementById("foundCount").innerText = foundWords;
+}
+
+function getCellAt(x,y) {
+let el=document.elementFromPoint(x,y);
+return (el&&el.classList.contains("grid-cell"))?el:null;
+}
+
+function isCellFullyFound(r, c) {
+let cell = gridData[r][c];
+if (!cell) return false;
+let indexes = cell.wordIndexes ? cell.wordIndexes : [cell.wordIndex];
+if (indexes[0] === -1) return false;
+return indexes.every(wi => foundByWord[wi]);
+}
+
+function startDrag(el) {
+if (gameOver) return;
+let r=parseInt(el.dataset.r), c=parseInt(el.dataset.c);
+if (isCellFullyFound(r, c)) return;
+clearWord();
+isDragging=true; dragDir=null;
+dragPath=[{r,c,el}];
+el.classList.add("active");
+current=el.innerText;
+document.getElementById("current").innerText=current;
+}
+
+function addCellToDrag(el) {
+if (!isDragging||!el) return;
+let r=parseInt(el.dataset.r), c=parseInt(el.dataset.c);
+if (dragPath.some(p=>p.r===r&&p.c===c)) return;
+let last=dragPath[dragPath.length-1];
+let dr=r-last.r, dc=c-last.c;
+if (Math.abs(dr)>1||Math.abs(dc)>1) return;
+if (dr===0&&dc===0) return;
+if (!dragDir) {
+    dragDir=[dr,dc];
+} else {
+    if (dr!==dragDir[0]||dc!==dragDir[1]) return;
+}
+dragPath.push({r,c,el});
+el.classList.add("active");
+current+=el.innerText;
+document.getElementById("current").innerText=current;
+}
+
+function endDrag() {
+if (!isDragging) return;
+isDragging=false;
+checkWord();
+}
+
+wsGrid.addEventListener("mousedown",e=>{let el=e.target.closest(".grid-cell");if(el)startDrag(el);});
+wsGrid.addEventListener("mousemove",e=>{if(!isDragging)return;let el=e.target.closest(".grid-cell");if(el)addCellToDrag(el);});
+document.addEventListener("mouseup",()=>{if(isDragging)endDrag();});
+
+wsGrid.addEventListener("touchstart",e=>{e.preventDefault();let t=e.touches[0],el=getCellAt(t.clientX,t.clientY);if(el)startDrag(el);},{passive:false});
+wsGrid.addEventListener("touchmove",e=>{e.preventDefault();if(!isDragging)return;let t=e.touches[0],el=getCellAt(t.clientX,t.clientY);if(el)addCellToDrag(el);},{passive:false});
+wsGrid.addEventListener("touchend",e=>{e.preventDefault();if(isDragging)endDrag();},{passive:false});
+
+function checkWord() {
+let found=false;
+let reversed=current.split("").reverse().join("");
+document.querySelectorAll(".word-slot").forEach(slot=>{
+    if (slot.classList.contains("correct")) return;
+    let w=slot.dataset.word.toUpperCase();
+    if (current===w||reversed===w) {
+        found=true;
+        slot.innerHTML=slot.dataset.word;
+        slot.classList.add("correct");
+        let wi = WORDS.indexOf(w);
+        foundByWord[wi] = true;
+        dragPath.forEach(p=>{
+            p.el.classList.remove("active");
+            if (isCellFullyFound(p.r, p.c)) {
+                p.el.classList.add("found");
+            }
+        });
+        current=""; dragPath=[]; dragDir=null;
+        document.getElementById("current").innerText="_ _ _";
+        score+=10; document.getElementById("scoreDisplay").innerText=score;
+        foundWords++;
+        // Mettre à jour le compteur sous la photo
+        document.getElementById("foundCount").innerText = foundWords;
+        if (foundWords===totalWords) {
+            gameOver=true; score+=timeLeft;
+            document.getElementById("scoreDisplay").innerText=score;
+            fetch("/crossword/game/complete",{
+                method:"POST",
+                headers:{"Content-Type":"application/x-www-form-urlencoded"},
+                body:"level="+currentLevel+"&score="+score
+            }).then(()=>{
+                if(isLastLevel){showNotif("🏆 Félicitations ! Score : "+score,"finish");setTimeout(()=>{window.location.href="/crossword/home";},2500);}
+                else{showNotif("🎉 Niveau terminé ! +"+timeLeft+" bonus !","win");setTimeout(()=>{window.location.href="/crossword/game/"+document.getElementById("nextLevel").innerText;},2500);}
+            });
+        } else { showNotif("✅ Mot trouvé ! +10 points","success"); }
+    }
+});
+if (!found) {
+    dragPath.forEach(p=>p.el.classList.remove("active"));
+    dragPath=[]; dragDir=null;
+}
+}
+
+function clearWord() {
+current="";
+dragPath.forEach(p=>p.el.classList.remove("active"));
+dragPath=[]; isDragging=false; dragDir=null;
+document.getElementById("current").innerText="_ _ _";
+}
+
+function saveGame() {
+if(gameOver)return;
+let list=[];
+document.querySelectorAll(".word-slot.correct").forEach(s=>list.push(s.dataset.word));
+fetch("/crossword/game/save",{
+    method:"POST",
+    headers:{"Content-Type":"application/x-www-form-urlencoded"},
+    body:"level="+currentLevel+"&score="+score+"&foundWords="+list.join(",")+"&timeLeft="+timeLeft
+}).then(r=>r.text()).then(res=>{
+    showNotif(res==="ok"?"💾 Partie sauvegardée !":"❌ Erreur",res==="ok"?"save":"error");
+});
+}
+
+function showNotif(msg,type) {
+let n=document.getElementById("notif");
+n.innerText=msg; n.className="notif "+type+" show";
+setTimeout(()=>n.classList.remove("show"),2500);
+}
+</script>
+</body>
+</html>

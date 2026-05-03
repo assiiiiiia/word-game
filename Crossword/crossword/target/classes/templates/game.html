@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Game</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #fff9c4, #fffde7);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+        .header {
+            width: 100%;
+            max-width: 850px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .back-btn {
+            padding: 10px 18px;
+            background: rgba(255,255,255,0.25);
+            color: #e65100;
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 14px;
+            border: 2px solid rgba(255,179,0,0.4);
+            transition: 0.3s;
+        }
+        .back-btn:hover { background: rgba(255,255,255,0.5); }
+        .level-badge {
+            background: white;
+            color: #e91e63;
+            font-weight: bold;
+            font-size: 16px;
+            padding: 10px 22px;
+            border-radius: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .score-badge {
+            background: rgba(255,255,255,0.5);
+            color: #e65100;
+            font-weight: bold;
+            font-size: 16px;
+            padding: 10px 22px;
+            border-radius: 20px;
+            border: 2px solid rgba(255,179,0,0.4);
+        }
+        .main-card {
+            background: white;
+            border-radius: 30px;
+            padding: 25px;
+            width: 100%;
+            max-width: 850px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.1);
+            display: flex;
+            gap: 30px;
+            align-items: center;
+        }
+        .image-box img {
+            width: 320px;
+            height: 320px;
+            object-fit: cover;
+            border-radius: 18px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        }
+        .game-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 14px;
+        }
+        .game-title {
+            font-size: 13px;
+            color: #aaa;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .current-row {
+            width: 90%;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .current-word {
+            flex: 1;
+            min-height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: #e91e63;
+            letter-spacing: 8px;
+            background: #fff9c4;
+            border-radius: 50px;
+            border: 2px solid #ffd54f;
+            box-shadow: inset 0 2px 6px rgba(0,0,0,0.04), 0 4px 12px rgba(255,179,0,0.1);
+        }
+        .backspace-btn {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #ffd54f, #ffb300);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(255,179,0,0.35);
+            transition: 0.2s;
+            flex-shrink: 0;
+        }
+        .backspace-btn:hover { transform: scale(1.1); }
+        .words {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+            width: 100%;
+        }
+        .word-slot {
+            padding: 9px 18px;
+            min-width: 90px;
+            background: #fafafa;
+            border: 2px solid #e8e8e8;
+            border-radius: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: bold;
+            color: #ccc;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            transition: 0.3s;
+        }
+        .word-slot.correct {
+            background: linear-gradient(135deg, #ffd54f, #ffb300);
+            border-color: #ffb300;
+            color: white;
+            box-shadow: 0 4px 14px rgba(255,179,0,0.4);
+        }
+        .letters-card {
+            background: #fffde7;
+            border-radius: 24px;
+            padding: 12px;
+            width: 95%;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8px;
+            border: 2px solid #ffd54f;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        .letter {
+            width: 42px;
+            height: 42px;
+            background: white;
+            border: 2px solid #ffd54f;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 17px;
+            font-weight: bold;
+            color: #e65100;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.2s;
+            box-shadow: 0 2px 6px rgba(255,179,0,0.15);
+        }
+        .letter:hover {
+            background: linear-gradient(135deg, #ffd54f, #ffb300);
+            color: white;
+            border-color: #ffb300;
+            transform: translateY(-3px);
+            box-shadow: 0 6px 14px rgba(255,179,0,0.4);
+        }
+        .letter.used {
+            background: #f0f0f0;
+            border-color: #e8e8e8;
+            color: #ccc;
+            pointer-events: none;
+            transform: none;
+            box-shadow: none;
+        }
+        .letter.locked {
+            background: #d0d0d0;
+            border-color: #c0c0c0;
+            color: #999;
+            pointer-events: none;
+            transform: none;
+            box-shadow: none;
+            opacity: 0.6;
+        }
+        .btn-row {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+            width: 95%;
+        }
+        .clear-btn, .save-btn {
+            padding: 10px 22px;
+            background: linear-gradient(135deg, #ffd54f, #ffb300);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            box-shadow: 0 4px 12px rgba(255,179,0,0.35);
+            transition: 0.3s;
+        }
+        .clear-btn:hover, .save-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 7px 18px rgba(255,179,0,0.5);
+        }
+        .notif {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            padding: 14px 30px;
+            border-radius: 50px;
+            font-size: 16px;
+            font-weight: bold;
+            color: white;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+            transition: all 0.4s ease;
+            opacity: 0;
+            z-index: 999;
+            white-space: nowrap;
+        }
+        .notif.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+        .notif.success { background: linear-gradient(135deg, #4CAF50, #66bb6a); }
+        .notif.win     { background: linear-gradient(135deg, #ffd54f, #ffb300); }
+        .notif.finish  { background: linear-gradient(135deg, #f9a825, #fbc02d); }
+        .notif.save    { background: linear-gradient(135deg, #ffd54f, #ffb300); }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <a th:href="@{/levels}" class="back-btn">⬅ Niveaux</a>
+        <div class="level-badge">🎯 Niveau <span th:text="${level}"></span></div>
+        <div class="score-badge">⭐ <span id="scoreDisplay">0</span> pts</div>
+    </div>
+
+    <span id="nextLevel"       th:text="${level + 1}"       style="display:none"></span>
+    <span id="currentLevel"    th:text="${level}"           style="display:none"></span>
+    <span id="isLastLevel"     th:text="${isLastLevel}"     style="display:none"></span>
+    <span id="savedScore"      th:text="${savedScore}"      style="display:none"></span>
+    <span id="savedFoundWords" th:text="${savedFoundWords}" style="display:none"></span>
+    <span id="savedTimeLeft"   th:text="${savedTimeLeft}"   style="display:none"></span>
+
+    <div class="main-card">
+        <div class="image-box">
+            <img th:src="@{'/images/' + ${image}}" alt="image">
+        </div>
+        <div class="game-area">
+            <div class="game-title">🔤 Trouvez les mots</div>
+            <div class="current-row">
+                <div class="current-word" id="current">_ _ _</div>
+                <button class="backspace-btn" onclick="deleteLetter()">⌫</button>
+            </div>
+            <div class="words">
+                <div class="word-slot"
+                     th:each="w : ${words}"
+                     th:attr="data-word=${w}">
+                    _ _ _
+                </div>
+            </div>
+            <div class="letters-card">
+                <div class="letter"
+                     th:each="l : ${letters}"
+                     th:text="${l}"
+                     th:attr="onclick=|add('${l}', this)|">
+                </div>
+            </div>
+            <div class="btn-row">
+                <button class="save-btn"  onclick="saveGame()">💾 Sauvegarder</button>
+                <button class="clear-btn" onclick="clearWord()">🗑 Effacer</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="notif" id="notif"></div>
+
+<script>
+let current        = "";
+let score          = 0;
+let foundWords     = 0;
+let totalWords     = document.querySelectorAll(".word-slot").length;
+let currentLevel   = parseInt(document.getElementById("currentLevel").innerText);
+let isLastLevel    = document.getElementById("isLastLevel").innerText === "true";
+let clickedLetters = [];
+
+let savedScore      = parseInt(document.getElementById("savedScore").innerText) || 0;
+let savedFoundWords = document.getElementById("savedFoundWords").innerText;
+
+if (savedScore > 0) {
+    score = savedScore;
+    document.getElementById("scoreDisplay").innerText = score;
+}
+
+if (savedFoundWords && savedFoundWords !== "") {
+    let saved = savedFoundWords.split(",").filter(w => w !== "");
+    saved.forEach(word => {
+        document.querySelectorAll(".word-slot").forEach(slot => {
+            if (slot.dataset.word === word) {
+                slot.innerHTML = word;
+                slot.classList.add("correct");
+                foundWords++;
+                word.split("").forEach(wl => {
+                    for (let el of document.querySelectorAll(".letter:not(.locked)")) {
+                        if (el.innerText === wl) {
+                            el.classList.add("locked");
+                            break;
+                        }
+                    }
+                });
+            }
+        });
+    });
+}
+
+function saveGame() {
+    const foundWordsList = [];
+    document.querySelectorAll(".word-slot.correct").forEach(s => {
+        foundWordsList.push(s.dataset.word);
+    });
+    fetch("/crossword/game/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: "level=" + currentLevel + "&score=" + score + "&foundWords=" + foundWordsList.join(",")
+    }).then(r => r.text()).then(res => {
+        if (res === "ok") showNotif("💾 Partie sauvegardée !", "save");
+        else showNotif("❌ Erreur de sauvegarde", "win");
+    });
+}
+
+function showNotif(message, type) {
+    let notif = document.getElementById("notif");
+    notif.innerText = message;
+    notif.className = "notif " + type + " show";
+    setTimeout(() => { notif.classList.remove("show"); }, 2500);
+}
+
+function add(letter, el) {
+    if (el.classList.contains("used") || el.classList.contains("locked")) return;
+    current += letter;
+    clickedLetters.push(el);
+    document.getElementById("current").innerText = current;
+    el.classList.add("used");
+    checkWord();
+}
+
+function deleteLetter() {
+    if (current.length === 0) return;
+    current = current.slice(0, -1);
+    document.getElementById("current").innerText = current.length > 0 ? current : "_ _ _";
+    let lastEl = clickedLetters.pop();
+    if (lastEl) lastEl.classList.remove("used");
+}
+
+function checkWord() {
+    document.querySelectorAll(".word-slot").forEach(slot => {
+        if (slot.classList.contains("correct")) return;
+        if (current === slot.dataset.word) {
+            slot.innerHTML = slot.dataset.word;
+            slot.classList.add("correct");
+            slot.dataset.word.split("").forEach(wl => {
+                for (let el of document.querySelectorAll(".letter:not(.locked)")) {
+                    if (el.innerText === wl) {
+                        el.classList.add("locked");
+                        break;
+                    }
+                }
+            });
+            document.querySelectorAll(".letter:not(.locked)").forEach(l => {
+                l.classList.remove("used");
+            });
+            current = "";
+            clickedLetters = [];
+            document.getElementById("current").innerText = "_ _ _";
+            score += 10;
+            document.getElementById("scoreDisplay").innerText = score;
+            foundWords++;
+            if (foundWords === totalWords) {
+                fetch("/crossword/game/complete", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                    body: "level=" + currentLevel + "&score=" + score
+                }).then(() => {
+                    if (isLastLevel) {
+                        showNotif("🏆 Félicitations ! Score final : " + score, "finish");
+                        setTimeout(() => { window.location.href = "/crossword/home"; }, 2500);
+                    } else {
+                        let next = parseInt(document.getElementById("nextLevel").innerText);
+                        showNotif("🎉 Niveau terminé ! Score : " + score, "win");
+                        setTimeout(() => { window.location.href = "/crossword/game/" + next; }, 2500);
+                    }
+                });
+            } else {
+                showNotif("✅ Mot trouvé ! +10 points", "success");
+            }
+        }
+    });
+}
+
+function resetLetters() {
+    document.querySelectorAll(".letter:not(.locked)").forEach(l => {
+        l.classList.remove("used");
+    });
+}
+
+function clearWord() {
+    current = "";
+    clickedLetters = [];
+    document.getElementById("current").innerText = "_ _ _";
+    resetLetters();
+}
+</script>
+
+</body>
+</html>

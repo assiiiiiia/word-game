@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Crosswords - Accueil</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Nunito', Arial, sans-serif;
+            background: linear-gradient(135deg, #f48fb1 0%, #fce4ec 35%, #e1bee7 65%, #b39ddb 100%);
+            padding: 2rem 1rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* ── LETTRES FLOTTANTES (même que login) ── */
+        .bg-letter {
+            position: fixed;
+            font-family: 'Fredoka One', cursive;
+            font-size: 2.2rem;
+            color: rgba(255,255,255,0.28);
+            pointer-events: none;
+            animation: swing var(--dur, 9s) ease-in-out infinite;
+            transform-origin: 50% 0;
+        }
+        @keyframes swing {
+            0%   { transform: rotate(-7deg); }
+            50%  { transform: rotate(7deg); }
+            100% { transform: rotate(-7deg); }
+        }
+
+        /* ── CARD PRINCIPALE ── */
+        .card {
+            background: white;
+            border-radius: 28px;
+            padding: 36px 34px 30px;
+            width: 380px;
+            box-shadow: 0 20px 50px rgba(173,20,87,0.15);
+            text-align: center;
+            position: relative;
+            z-index: 1;
+            animation: slideUp 0.5s cubic-bezier(0.16,1,0.3,1) both;
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(28px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ── LOGO TUILES ── */
+        .logo-tiles {
+            display: flex;
+            gap: 5px;
+            justify-content: center;
+            margin-bottom: 10px;
+        }
+        .ltile {
+            width: 36px; height: 36px;
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-family: 'Fredoka One', cursive;
+            font-size: 1.1rem; color: white;
+            position: relative;
+        }
+        .ltile .tn {
+            position: absolute; top: 2px; left: 3px;
+            font-size: 7px; font-family: 'Nunito', sans-serif;
+            font-weight: 700; opacity: 0.55;
+        }
+        .t1 { background: #e91e8c; }
+        .t2 { background: #7c3aed; }
+        .t3 { background: #0ea5e9; }
+        .t4 { background: #f59e0b; }
+
+        /* ── TITRE & WELCOME ── */
+        h1 {
+            font-family: 'Fredoka One', cursive;
+            font-size: 24px;
+            color: #880e4f;
+            margin-bottom: 4px;
+        }
+        .welcome-text {
+            font-size: 13px;
+            color: #b0bec5;
+            margin-bottom: 28px;
+        }
+        .welcome-text strong { color: #e91e8c; }
+
+        /* ── BOUTON JOUER (principal, animé) ── */
+        .play-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            width: 100%;
+            padding: 16px 22px;
+            background: linear-gradient(135deg, #e91e8c, #ce93d8);
+            border: none;
+            color: white;
+            border-radius: 16px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 18px;
+            font-family: 'Fredoka One', cursive;
+            letter-spacing: 0.5px;
+            box-shadow: 0 6px 20px rgba(233,30,140,0.35);
+            transition: 0.25s;
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 14px;
+        }
+        .play-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 28px rgba(233,30,140,0.45);
+        }
+        .play-btn:active { transform: translateY(0); }
+
+        /* Effet shine */
+        .btn-shine {
+            position: absolute; top: 0; left: -100%;
+            width: 55%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.22), transparent);
+            animation: shine 2.6s infinite;
+        }
+        @keyframes shine {
+            0% { left: -100%; }
+            40%,100% { left: 160%; }
+        }
+
+        .play-icon {
+            width: 44px; height: 44px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 22px;
+            flex-shrink: 0;
+        }
+        .play-text { text-align: left; }
+        .play-text-main { font-size: 17px; display: block; }
+        .play-text-sub  { font-size: 11px; opacity: 0.85; font-family: 'Nunito', sans-serif; font-weight: 600; display: block; }
+
+        /* ── SCORE BAR (dans la card) ── */
+        .score-row {
+            display: flex;
+            gap: 0;
+            border-radius: 14px;
+            overflow: hidden;
+            border: 2px solid #fce4ec;
+            margin-bottom: 18px;
+        }
+        .score-item {
+            flex: 1;
+            padding: 12px 0;
+            text-align: center;
+            background: #fdf6f9;
+        }
+        .score-item:not(:last-child) { border-right: 2px solid #fce4ec; }
+        .score-value {
+            font-family: 'Fredoka One', cursive;
+            font-size: 22px;
+            color: #e91e8c;
+        }
+        .score-label {
+            font-size: 11px;
+            color: #b0bec5;
+            font-weight: 700;
+            margin-top: 2px;
+        }
+
+        /* ── SÉPARATEUR ── */
+        .divider {
+            border: none;
+            border-top: 2px solid #fce4ec;
+            margin: 4px 0 14px;
+        }
+
+        /* ── ICÔNES PARAMÈTRES / QUITTER ── */
+        .icon-row {
+            display: flex;
+            gap: 10px;
+        }
+        .icon-btn {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 10px;
+            border-radius: 14px;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 700;
+            transition: 0.22s;
+            border: 2px solid transparent;
+        }
+        .icon-btn svg {
+            width: 20px; height: 20px;
+            flex-shrink: 0;
+            transition: 0.22s;
+        }
+
+        /* Paramètres */
+        .btn-settings {
+            background: #f0f7ff;
+            color: #1565c0;
+            border-color: #c8e6ff;
+        }
+        .btn-settings svg { stroke: #1565c0; }
+        .btn-settings:hover {
+            background: #1565c0;
+            color: white;
+            border-color: #1565c0;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(21,101,192,0.3);
+        }
+        .btn-settings:hover svg { stroke: white; }
+
+        /* Quitter */
+        .btn-exit {
+            background: #fff5f5;
+            color: #c62828;
+            border-color: #ffd6d6;
+        }
+        .btn-exit svg { stroke: #c62828; }
+        .btn-exit:hover {
+            background: #c62828;
+            color: white;
+            border-color: #c62828;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(198,40,40,0.3);
+        }
+        .btn-exit:hover svg { stroke: white; }
+    </style>
+</head>
+
+<body>
+
+<!-- Lettres flottantes (même que login) -->
+<div class="bg-letter" style="top:5%;left:3%;--dur:8s">A</div>
+<div class="bg-letter" style="top:8%;left:85%;--dur:11s">Z</div>
+<div class="bg-letter" style="top:25%;left:7%;--dur:9s">W</div>
+<div class="bg-letter" style="top:45%;left:90%;--dur:10s">X</div>
+<div class="bg-letter" style="top:62%;left:4%;--dur:12s">Q</div>
+<div class="bg-letter" style="top:75%;left:83%;--dur:9s">K</div>
+<div class="bg-letter" style="top:35%;left:92%;--dur:13s">M</div>
+<div class="bg-letter" style="top:88%;left:15%;--dur:10s">B</div>
+
+<div class="card">
+
+    <!-- Logo tuiles -->
+    <div class="logo-tiles">
+        <div class="ltile t1"><span class="tn">1</span>W</div>
+        <div class="ltile t2"><span class="tn">2</span>O</div>
+        <div class="ltile t3"><span class="tn">3</span>R</div>
+        <div class="ltile t4"><span class="tn">4</span>D</div>
+    </div>
+
+    <h1>Crosswords</h1>
+    <p class="welcome-text">Bienvenue, <strong th:text="${session.player?.name}">Joueur</strong> ! 🎮</p>
+
+    <!-- Score -->
+    <div class="score-row">
+        <div class="score-item">
+            <div class="score-value" th:text="${session.player?.score}">0</div>
+            <div class="score-label">⭐ Score</div>
+        </div>
+        <div class="score-item">
+            <div class="score-value" th:text="${session.player?.currentLevel}">1</div>
+            <div class="score-label">🎯 Niveau</div>
+        </div>
+    </div>
+
+    <!-- Bouton Jouer -->
+    <a th:href="@{/levels}" class="play-btn">
+        <div class="btn-shine"></div>
+        <div class="play-icon">▶️</div>
+        <div class="play-text">
+            <span class="play-text-main">Jouer</span>
+            <span class="play-text-sub">Choisir un niveau →</span>
+        </div>
+    </a>
+
+    <hr class="divider">
+
+    <!-- Icônes Paramètres / Quitter -->
+    <div class="icon-row">
+
+        <a th:href="@{/settings}" class="icon-btn btn-settings">
+            <svg fill="none" stroke-width="2" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+            </svg>
+            Paramètres
+        </a>
+
+        <a th:href="@{/login-page}" class="icon-btn btn-exit">
+            <svg fill="none" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                <polyline points="16 17 21 12 16 7"/>
+                <line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+            Quitter
+        </a>
+
+    </div>
+
+</div>
+
+</body>
+</html>
