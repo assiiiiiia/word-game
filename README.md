@@ -1,10 +1,10 @@
-# Crossword — Jeu de Mots Croisés Web
+# Crossword  Jeu de Mots Croisés Web
 
 > Application web de mots croisés thématiques (animaux, plage, fruits) avec gestion de joueurs, niveaux progressifs et sauvegarde de parties.
 
-![Écran de connexion](docs/screenshot-login.png)
-![Sélection de niveaux](docs/screenshot-levels.png)
-![Niveau 3](docs/screenshot-level3.png)
+![Écran de connexion](Crossword/crossword/docs/screenshot-login.png)
+![Sélection de niveaux](Crossword/crossword/docs/screenshot-levels.png)
+![Niveau 3](Crossword/crossword/docs/screenshot-level3.png)
 
 ## 🎯 Contexte
 
